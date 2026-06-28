@@ -3,10 +3,13 @@ import os
 
 # ---- 数据源：GDELT 查询（关键词）。免费、免部署、免 key ----
 # 覆盖：竞品 + 跨境支付 + 出海 + 监管。可继续加。
+# 注意：竞品名里 Wise/Stripe/PingPong 等是常见英文词，单独 OR 会捞进大量噪音。
+# 用精确短语 + 行业限定收紧；最终信号保证仍在 Refiner。查询需按效果持续调优。
 GDELT_QUERIES = [
-    '(Airwallex OR Stripe OR Wise OR PingPong OR XTransfer OR WorldFirst)',
-    '("cross-border payment" OR "跨境支付" OR 出海)',
-    '(稳定币 OR "stablecoin license" OR 跨境电商)',
+    '"Airwallex"',
+    '"cross-border payment" OR "跨境支付"',
+    '"跨境电商" OR "企业出海"',
+    '"XTransfer" OR "WorldFirst" OR "stablecoin license"',
 ]
 GDELT_MAXRECORDS = 20      # 每个查询最多取多少条
 GDELT_TIMESPAN = '3d'      # 近 3 天
