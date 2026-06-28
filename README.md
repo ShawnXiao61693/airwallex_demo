@@ -30,20 +30,55 @@ cd web && python3 -m http.server 8000
 ## 架构
 
 ```mermaid
-flowchart TD
-  S["数据源：竞品 / 监管牌照 / 汇率 / 行业 / 客户 / 我方"] --> E["信噪比引擎：去重 · 打分 · 打标"]
-  E --> DB[("新闻库 Postgres + pgvector")]
-  DB --> D["日报 · 全自动 · 过滤"]
-  DB --> W["周报 · 半自动 · 选择"]
-  DB --> M["月报 · 人主导 · 判断"]
-  D --> R["RevE 工作台 · 审核"]
-  W --> R
-  M --> R
-  R --> P[("正式库 · Git main → Nginx/Pages")]
-  P --> X["按角色分发：飞书 / Slack / HTML 链接"]
-  X --> U["销售 AE / 客户成功 AM"]
-  U --> T["行为追踪"]
-  T --> DB
+flowchart TB
+  S["数据源<br/>RSSHub·DailyHotApi·GDELT·we-mp-rss·Crawl4AI·Tavily/Exa"]
+
+  subgraph PIPE["主链路"]
+    direction LR
+    C["Collector 采集<br/>Engine·薄摄取层"]
+    R["Refiner 提炼<br/>Agent·LLM"]
+    CO["Composer 制作<br/>Agent·仅日报"]
+    RV["审核发布<br/>RevE工作台·人"]
+    D["Distributor 分发<br/>Engine·按角色·可归因链接"]
+    FE["用户端<br/>HTML·按角色渲染"]
+    U["销售 AE/AM"]
+  end
+
+  subgraph DB["数据库 自建 Postgres + pgvector"]
+    NEWS[("news 表<br/>status raw→refined + embedding")]
+    REP[("report<br/>日报·item_ids")]
+    PUB[("publication<br/>周/月·HTML")]
+    VEC["共享向量层<br/>去重·检索·聚类"]
+  end
+
+  subgraph CROSS["贯穿层"]
+    UC["用户中心<br/>身份·角色·客户档案"]
+    TR["实名埋点"]
+    EV[("events 行为库")]
+    DASH["数据看板<br/>采用漏斗·内容效果·参与"]
+  end
+
+  MAN["手搓上传<br/>周/月报 HTML"]
+  EN["Engage 实时话术Agent<br/>个性化按钮"]
+
+  S --> C
+  C -->|写raw| NEWS
+  NEWS <-->|读raw·写refined| R
+  NEWS -->|读refined| CO
+  CO -->|写日报| REP
+  CO --> RV
+  MAN -->|写| PUB
+  MAN -.送审.-> RV
+  RV -->|发布| D
+  REP -.读已发布.-> D
+  PUB -.读已发布.-> D
+  D --> FE --> U
+
+  UC -.路由.-> D
+  UC -.个性化.-> FE
+  U <-->|按钮·话术| EN
+  U -.实名事件.-> TR --> EV --> DASH
+  DASH -.反馈回路·调策略.-> R
 ```
 
 技术栈全部开源、可自托管（Postgres+pgvector / Git / Nginx / Python），可跑在一台 EC2 上；唯一外部付费项是 LLM API。
