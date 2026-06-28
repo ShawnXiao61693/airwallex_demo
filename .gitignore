@@ -1,0 +1,21 @@
+# 依赖与构建
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+dist/
+
+# 环境与密钥（绝不提交）
+.env
+.env.*
+*.key
+*.pem
+secrets.*
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 工具产出
+.playwright-mcp/
+*.log

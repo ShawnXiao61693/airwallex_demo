@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>用户端 · Airwallex 销售情报</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body class="app-bg">
+
+<header class="pagehead">
+  <div class="wrap row">
+    <div class="wordmark"><span class="dot"></span>销售情报 · 用户端</div>
+    <a class="back" href="index.html">← 返回首页</a>
+  </div>
+</header>
+
+<!-- 注册 -->
+<div id="authView" class="auth-wrap">
+  <div class="card auth-card">
+    <h1>注册 / 登录</h1>
+    <p class="sub">选择你的身份，我们只把跟你相关的情报推给你。</p>
+    <div class="field">
+      <label>工作邮箱</label>
+      <input id="email" type="email" placeholder="you@airwallex.com" value="zhang.san@airwallex.com">
+    </div>
+    <div class="field">
+      <label>你的身份</label>
+      <div class="role-opts">
+        <div class="role-opt sel" data-role="AE">
+          <strong>AE · 拓新销售</strong><span>Hunter，签新客</span>
+        </div>
+        <div class="role-opt" data-role="AM">
+          <strong>AM · 客户成功</strong><span>Farmer，维护扩量</span>
+        </div>
+      </div>
+    </div>
+    <div class="field">
+      <label>负责行业</label>
+      <select id="industry">
+        <option>电商 / 独立站</option>
+        <option>游戏出海</option>
+        <option>OTA / 旅游</option>
+        <option>SaaS</option>
+        <option>B2B 外贸</option>
+      </select>
+    </div>
+    <button class="btn btn-grad" style="width:100%;justify-content:center" onclick="enter()">注册并进入</button>
+  </div>
+</div>
+
+<!-- 报告 -->
+<div id="reportView" class="wrap" style="display:none">
+  <div class="report-top">
+    <div>
+      <div class="eyebrow">每日情报</div>
+      <h1 id="rTitle">日报 · 2026-06-28</h1>
+      <div class="report-meta" id="rMeta"></div>
+    </div>
+    <div class="who" id="who"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" data-cad="日报" onclick="switchCad(this)">日报</button>
+    <button class="tab" data-cad="周报" onclick="switchCad(this)">周报</button>
+    <button class="tab" data-cad="月报" onclick="switchCad(this)">月报</button>
+  </div>
+
+  <div id="intelList"></div>
+  <div id="denoiseBox"></div>
+</div>
+
+<!-- 话术 modal -->
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeModal()">×</button>
+    <div class="eyebrow">结合你的客户 · 生成话术</div>
+    <h3 id="mTitle"></h3>
+    <div class="pitch" id="mPitch"></div>
+    <p class="muted" style="font-size:12px;margin:0">示例输出。生产环境为实时调用 LLM，结合该用户负责的具体客户档案生成。</p>
+  </div>
+</div>
+
+<script src="assets/data.js"></script>
+<script>
+let ROLE="AE", CAD="日报";
+document.querySelectorAll('.role-opt').forEach(o=>o.onclick=()=>{
+  document.querySelectorAll('.role-opt').forEach(x=>x.classList.remove('sel'));
+  o.classList.add('sel'); ROLE=o.dataset.role;
+});
+function enter(){
+  document.getElementById('authView').style.display='none';
+  document.getElementById('reportView').style.display='block';
+  const ind=document.getElementById('industry').value;
+  document.getElementById('who').textContent=`你好，张三（${ROLE==='AE'?'AE · 拓新':'AM · 客户成功'} · ${ind}）`;
+  render();
+}
+function switchCad(btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on'); CAD=btn.dataset.cad; render();
+}
+function render(){
+  const t={'日报':'日报 · 2026-06-28','周报':'周报 · 2026 第26周','月报':'月报 · 2026年6月'};
+  document.getElementById('rTitle').textContent=t[CAD];
+  // 日报按角色过滤；周报/月报沿用全部（暂同内容）
+  const items = CAD==='日报' ? INTEL.filter(i=>i.roles.includes(ROLE)) : INTEL;
+  document.getElementById('rMeta').textContent =
+    CAD==='日报' ? `按「${ROLE}」过滤 · 保留 ${items.length} 条可行动情报` : `本期 ${items.length} 条 · 暂沿用同一内容`;
+  document.getElementById('intelList').innerHTML = items.map(card).join('');
+  document.getElementById('denoiseBox').innerHTML = CAD==='日报'
+    ? `<div class="denoise"><b>降噪区（今日已过滤）</b><br>`+DENOISE.map(d=>'· '+d).join('<br>')+`</div>` : '';
+}
+function card(i){
+  return `<div class="card intel">
+    <div class="meta">
+      ${i.hot?'<span class="signal-hot">🔥 高信号</span>':''}
+      <span class="chip cat-${i.category}">${i.category}</span>
+      <span class="chip">${i.signal}</span>
+      <span class="badge-role">${i.roles.join(' / ')}</span>
+      <span class="chip">${i.industry}</span>
+    </div>
+    <h3>${i.title}</h3>
+    <div class="line"><b>点评：</b>${i.comment}</div>
+    <div class="line"><b>动作：</b>${i.action}</div>
+    <div class="foot">
+      <span class="src">来源：${i.source}</span>
+      <button class="btn btn-grad btn-sm" onclick="pitch(${i.id})">结合我的客户生成话术</button>
+    </div>
+  </div>`;
+}
+function pitch(id){
+  const i=INTEL.find(x=>x.id===id);
+  document.getElementById('mTitle').textContent=i.title;
+  document.getElementById('mPitch').textContent=
+`【开场】最近留意到「${i.title}」，想到您这边可能正好用得上。
+
+【为什么和您相关】${i.comment}
+
+【我们能做什么】${i.action}
+
+【建议下一步】方便的话约 15 分钟，我把对应的 Airwallex 方案和报价给您过一遍。`;
+  document.getElementById('modal').classList.add('show');
+}
+function closeModal(){document.getElementById('modal').classList.remove('show');}
+document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+</script>
+</body>
+</html>

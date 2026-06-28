@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>解题思路 · Airwallex 销售情报</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="pagehead">
+  <div class="wrap row">
+    <div class="wordmark"><span class="dot"></span>解题思路与方案设计</div>
+    <a class="back" href="index.html">← 返回首页</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="sol-hero">
+    <div class="eyebrow" style="color:#FF703F;margin-bottom:16px">问题界定 → 调研 → 用户 → 产品 → 架构</div>
+    <h1>这不是"收集新闻"，<br>是<span class="grad-text">把信息变成成交能力</span>。</h1>
+    <p class="lead">同样一句"做新闻工具"，可以交出一个没人用的聚合器，也可以交出一个改变销售产出的系统。差别不在技术，而在于先回答了"为谁、解决什么"。</p>
+  </div>
+
+  <div class="sol-layout">
+    <nav class="sol-toc">
+      <a href="#s1">1 问题界定</a>
+      <a href="#s2">2 调研与用户</a>
+      <a href="#s3">3 三种产品</a>
+      <a href="#s4">4 如何触达</a>
+      <a href="#s5">5 架构</a>
+      <a href="#s6">6 Demo 范围</a>
+    </nav>
+
+    <div class="sol-body">
+      <section id="s1">
+        <h2><span class="s-no">01</span>问题界定</h2>
+        <p>这个岗位是中国区 Revenue Enablement（销售赋能）。据此我们把题目重新界定为：<b>为一线销售，构建一个把外部市场信息转化为销售能力的工具。</b></p>
+        <p>这一界定让"信噪比"从一个技术参数，变成必须守住的约束——对销售有用的信息，与"今天有什么新闻"，是两个量级不同的集合。收集不难，"捞准"才难，而能否捞准，完全取决于是否真正理解销售的需求。所以我们从用户入手，而非技术。</p>
+      </section>
+
+      <section id="s2">
+        <h2><span class="s-no">02</span>调研与用户</h2>
+        <p>我们做了三类相互印证的调研：吃透 Airwallex 的业务与竞争格局；拆解十余份在招销售岗位 JD，反推真实的销售组织；并访谈一位深圳一线销售。</p>
+        <p>一线销售独立作战、没有售前技术支持，成交高度依赖"认知差"。组织上由"第一年客保"制度把销售切成两类角色：<b>拓新签约的 AE（Hunter）</b>与<b>维护扩量的 AM（客户成功 / Farmer）</b>，两者的情报需求并不相同。</p>
+        <div class="callout">
+          <b>决定性发现：</b>几乎每一份销售 JD 的职责里，都写着"跟进行业趋势"、"成为行业动态的代言人"。也就是说，持续掌握市场情报，是 Airwallex 自己写进每个销售岗位、并纳入考核的硬性职责——只是从未有工具去支撑它。我们填的，正是这个被明文要求、却长期空置的缺口。
+        </div>
+      </section>
+
+      <section id="s3">
+        <h2><span class="s-no">03</span>三种产品</h2>
+        <p>日报、周报、月报不是同一内容的三种长度，而是服务三种不同时间尺度决策的三种产品。它们沿一条原则展开：<b>周期越长，自动化越低，人的判断越重。</b>"信噪比"这条约束并未消失，而是分解进了每种产品——日报靠过滤、周报靠选择、月报靠判断。</p>
+        <table class="cadence-table">
+          <thead><tr><th></th><th>日报</th><th>周报</th><th>月报</th></tr></thead>
+          <tbody>
+            <tr><td>定位</td><td>今日战场弹药</td><td>信息炼成弹药</td><td>沉淀深度与方法</td></tr>
+            <tr><td>自动化</td><td>全自动</td><td>半自动</td><td>人主导 + AI 辅助</td></tr>
+            <tr><td>信噪比靠</td><td>过滤</td><td>选择</td><td>判断</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section id="s4">
+        <h2><span class="s-no">04</span>如何触达</h2>
+        <p>赋能领域最容易被忽视的真相是：再好的情报，没被用，就等于零。我们用 <b>Reach · Teach · Engage</b> 来组织触达——Reach 让情报按角色到达销售手里（日报）；Teach 把信息炼成可复用的话术与培训（周报）；Engage 让销售从被动接收变主动使用（个性化按钮、自测、反馈回路）。这也要求它是一个嵌进工作流、可交互、带反馈闭环的平台，而不是一个静态邮件列表。</p>
+      </section>
+
+      <section id="s5">
+        <h2><span class="s-no">05</span>架构</h2>
+        <p>骨架是"一套引擎、三种产品、三种触达"：底层一套采集与信噪比引擎产出"原子情报"，向上分流成日 / 周 / 月三种产品，经人工审核后发布、按角色路由触达销售；用户行为数据回流，让平台成为一个可度量的赋能体系，而非邮件。</p>
+        <div class="callout" style="font-family:var(--mono);font-size:13px;line-height:2;background:#1A1D21;color:#D7DBE2;border:0">
+          采集引擎（6类来源）→ 信噪比引擎（去重·打分·打标）→ 新闻库<br>
+          → 日报(全自动) / 周报(半自动) / 月报(人主导) → 审核发布<br>
+          → 按角色分发（飞书/Slack/平台）→ 销售 & 客户成功<br>
+          → 行为数据回流 → 优化策略 · 度量效果
+        </div>
+      </section>
+
+      <section id="s6">
+        <h2><span class="s-no">06</span>Demo 范围</h2>
+        <p>完整平台如上，但 demo 必须做减法——敢于取舍本身就是方案的一部分。本次聚焦：以<b>日报</b>为核心（真实新闻 + 信噪比过滤 + 按角色差异化 + 个性化话术按钮），辅以<b>周报 / 月报</b>样例与 <b>RevE 工作台</b>（策略配置、审核发布、数据看板）。明确不做：CRM 整合、全自动替代人写话术、多语言全球版、秒级实时——它们不在"用最小的东西证明方案成立"的关键路径上。</p>
+      </section>
+    </div>
+  </div>
+</div>
+</body>
+</html>

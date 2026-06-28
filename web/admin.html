@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>RevE 工作台 · Airwallex 销售情报</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<div class="admin">
+  <!-- 侧栏 -->
+  <aside class="side">
+    <div class="wordmark"><span class="dot"></span>RevE 工作台</div>
+    <div class="nav-label">内容</div>
+    <div class="navitem on" data-p="p-strategy" onclick="nav(this)">⚙ 策略</div>
+    <div class="navitem" data-p="p-daily" onclick="nav(this)">▤ 日报审核</div>
+    <div class="navitem" data-p="p-weekly" onclick="nav(this)">▤ 周报审核</div>
+    <div class="navitem" data-p="p-monthly" onclick="nav(this)">▤ 月报审核</div>
+    <div class="nav-label">运营</div>
+    <div class="navitem" data-p="p-stats" onclick="nav(this)">▦ 数据统计</div>
+    <div class="navitem" data-p="p-users" onclick="nav(this)">◔ 用户列表</div>
+    <div style="position:absolute;bottom:22px"><a class="back" href="index.html" style="color:#6B7280">← 返回首页</a></div>
+  </aside>
+
+  <!-- 主区 -->
+  <main class="main">
+
+    <!-- 策略 -->
+    <section id="p-strategy" class="panel on">
+      <h1>采集策略</h1>
+      <p class="desc">调这里的参数，就是在调整整个引擎的「口味」和信噪比。</p>
+      <div class="grid-2">
+        <div class="card tile">
+          <h4>数据源</h4>
+          <div class="hint">引擎从这些来源抓取原始情报</div>
+          <div class="kv"><span class="k">搜索关键词</span><span>竞品名 + 出海 + 牌照 …（28）</span></div>
+          <div class="kv"><span class="k">RSS / 行业媒体</span><span>12 个</span></div>
+          <div class="kv"><span class="k">监控网站</span><span>监管官网 / 竞品 newsroom（9）</span></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px">编辑数据源</button>
+        </div>
+        <div class="card tile">
+          <h4>信号打分权重</h4>
+          <div class="hint">决定什么算「信号」、什么被降噪</div>
+          <div class="kv"><span class="k">相关性</span><span>40%</span></div>
+          <div class="kv"><span class="k">时效性</span><span>25%</span></div>
+          <div class="kv"><span class="k">可行动性</span><span>25%</span></div>
+          <div class="kv"><span class="k">来源可信度</span><span>10%</span></div>
+          <button class="btn btn-ghost btn-sm" style="margin-top:14px">调整权重</button>
+        </div>
+      </div>
+      <div class="card tile" style="margin-top:16px">
+        <h4>情报分类法</h4>
+        <div class="hint">每条情报按这些类目打标，决定它进哪份报告、推给谁</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <span class="chip cat-竞品">竞品</span><span class="chip cat-监管">监管牌照</span>
+          <span class="chip cat-汇率">汇率宏观</span><span class="chip cat-行业">目标行业</span>
+          <span class="chip cat-客户">客户潜客</span><span class="chip cat-我方">我方生态</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 日报审核 -->
+    <section id="p-daily" class="panel">
+      <h1>日报审核</h1>
+      <p class="desc">AI 自动产出候选（RC），人工确认后发布。</p>
+      <div class="card sched-card" onclick="openSched('日报')">
+        <h4>⏰ 时间设置</h4>
+        <div class="when"><span class="lab">审核时间：</span>每天 17:00</div>
+        <div class="when"><span class="lab">发出时间：</span>每周一 09:30</div>
+        <div class="statusline">点击修改</div>
+      </div>
+      <div style="margin-top:20px" id="dailyDrafts"></div>
+    </section>
+
+    <!-- 周报审核 -->
+    <section id="p-weekly" class="panel">
+      <h1>周报审核</h1>
+      <p class="desc">半自动：AI 生产初稿，周报编辑策展、把关。</p>
+      <div class="card sched-card" onclick="openSched('周报')">
+        <h4>⏰ 时间设置</h4>
+        <div class="when"><span class="lab">审核时间：</span>每周五 15:00</div>
+        <div class="when"><span class="lab">发出时间：</span>每周一 09:30</div>
+        <div class="statusline">点击修改</div>
+      </div>
+      <div style="margin-top:20px" class="draftrow">
+        <div><span class="pill draft">草稿</span>&nbsp; 周报 · 2026 第26周 <span class="muted" style="font-size:13px">（含 AI 播客 + 自测）</span></div>
+        <div style="display:flex;gap:8px"><a class="btn btn-ghost btn-sm" href="app.html">预览</a><button class="btn btn-grad btn-sm">确认发布</button></div>
+      </div>
+    </section>
+
+    <!-- 月报审核 -->
+    <section id="p-monthly" class="panel">
+      <h1>月报审核</h1>
+      <p class="desc">人主导、AI 辅助的深度特刊。</p>
+      <div class="card sched-card" onclick="openSched('月报')">
+        <h4>⏰ 时间设置</h4>
+        <div class="when"><span class="lab">审核时间：</span>每月 25 号</div>
+        <div class="when"><span class="lab">发出时间：</span>每月 1 号 09:30</div>
+        <div class="statusline">点击修改</div>
+      </div>
+      <div style="margin-top:20px" class="draftrow">
+        <div><span class="pill draft">草稿</span>&nbsp; 月报 · 2026年6月特刊</div>
+        <div style="display:flex;gap:8px"><a class="btn btn-ghost btn-sm" href="app.html">预览</a><button class="btn btn-grad btn-sm">确认发布</button></div>
+      </div>
+    </section>
+
+    <!-- 数据统计 -->
+    <section id="p-stats" class="panel">
+      <h1>数据统计</h1>
+      <p class="desc">谁看了什么、用了什么——让效果可被衡量，并回流去优化策略。</p>
+      <div class="grid-3">
+        <div class="card stat"><div class="n grad">82%</div><div class="l">本周日报打开率</div></div>
+        <div class="card stat"><div class="n grad">37</div><div class="l">「生成话术」点击次数</div></div>
+        <div class="card stat"><div class="n grad">5</div><div class="l">由情报触发的新建商机</div></div>
+      </div>
+      <div class="card tile" style="margin-top:16px">
+        <h4>最被使用的情报（本周）</h4>
+        <div class="hint">这些信号最常被点开/生成话术，可在策略里加权</div>
+        <div class="kv"><span class="k">SHEIN 开放韩国站</span><span>14 次话术生成</span></div>
+        <div class="kv"><span class="k">拉美中东新蓝海</span><span>9 次</span></div>
+        <div class="kv"><span class="k">XTransfer IPO</span><span>7 次</span></div>
+      </div>
+    </section>
+
+    <!-- 用户列表 -->
+    <section id="p-users" class="panel">
+      <h1>用户列表</h1>
+      <p class="desc">管理身份、角色与负责的客户档案——这同时是个性化与路由的依据。</p>
+      <div class="card tile">
+        <table class="tbl">
+          <thead><tr><th>姓名</th><th>角色</th><th>负责行业</th><th>本周活跃</th></tr></thead>
+          <tbody>
+            <tr><td>张三</td><td>AE · 拓新</td><td>电商 / 独立站</td><td>高</td></tr>
+            <tr><td>李四</td><td>AM · 客户成功</td><td>游戏出海</td><td>中</td></tr>
+            <tr><td>王五</td><td>AE · 拓新</td><td>B2B 外贸</td><td>高</td></tr>
+            <tr><td>赵六</td><td>AM · 客户成功</td><td>电商</td><td>低</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- 时间设置 modal -->
+<div class="modal-bg" id="schedModal">
+  <div class="modal">
+    <button class="modal-x" onclick="closeSched()">×</button>
+    <div class="eyebrow">时间设置</div>
+    <h3 id="schedTitle"></h3>
+    <div class="field"><label>审核时间</label><input id="reviewTime" type="text"></div>
+    <div class="field"><label>发出时间</label><input id="sendTime" type="text"></div>
+    <button class="btn btn-grad" style="justify-content:center" onclick="closeSched()">保存设置</button>
+  </div>
+</div>
+
+<script src="assets/data.js"></script>
+<script>
+function nav(el){
+  document.querySelectorAll('.navitem').forEach(n=>n.classList.remove('on'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  document.getElementById(el.dataset.p).classList.add('on');
+}
+// 日报审核草稿列表（用同一份情报数据生成 RC 列表）
+document.getElementById('dailyDrafts').innerHTML = INTEL.map(i=>
+  `<div class="draftrow">
+     <div><span class="pill draft">RC</span>&nbsp; <span class="chip cat-${i.category}">${i.category}</span>&nbsp; ${i.title}</div>
+     <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm">查看</button><button class="btn btn-grad btn-sm">通过</button></div>
+   </div>`).join('') +
+  `<div style="margin-top:14px;text-align:right"><button class="btn btn-grad">全部通过并发布日报</button></div>`;
+
+const SCHED={
+  '日报':{r:'每天 17:00', s:'每周一 09:30'},
+  '周报':{r:'每周五 15:00', s:'每周一 09:30'},
+  '月报':{r:'每月 25 号', s:'每月 1 号 09:30'}
+};
+function openSched(t){
+  document.getElementById('schedTitle').textContent=t+' · 时间设置';
+  document.getElementById('reviewTime').value=SCHED[t].r;
+  document.getElementById('sendTime').value=SCHED[t].s;
+  document.getElementById('schedModal').classList.add('show');
+}
+function closeSched(){document.getElementById('schedModal').classList.remove('show');}
+document.getElementById('schedModal').addEventListener('click',e=>{if(e.target.id==='schedModal')closeSched();});
+</script>
+</body>
+</html>
