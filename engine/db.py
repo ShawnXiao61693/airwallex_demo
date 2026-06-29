@@ -29,6 +29,17 @@ CREATE TABLE IF NOT EXISTS news (
 # 历史库可能没有 summary 列，启动时补一下
 MIGRATIONS = ["ALTER TABLE news ADD COLUMN IF NOT EXISTS summary TEXT;"]
 
+# 用户对每条情报的「有用/没用」反馈（埋点 → 数据看板 / 优化 Refiner）
+SCHEMA_FEEDBACK = """
+CREATE TABLE IF NOT EXISTS feedback (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  news_id BIGINT,
+  role TEXT,                     -- AE / AM
+  vote TEXT,                     -- up / down
+  created_at TEXT
+);
+"""
+
 SCHEMA_PUB = """
 CREATE TABLE IF NOT EXISTS publications (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -46,8 +57,14 @@ def init_db():
     with conn() as c:
         c.execute(SCHEMA)
         c.execute(SCHEMA_PUB)
+        c.execute(SCHEMA_FEEDBACK)
         for m in MIGRATIONS:
             c.execute(m)
+
+def add_feedback(news_id, role, vote):
+    with conn() as c:
+        c.execute("INSERT INTO feedback (news_id, role, vote, created_at) VALUES (%s,%s,%s,%s)",
+                  (news_id, role, vote, datetime.datetime.utcnow().isoformat()))
 
 # ---- 周/月报出版物（手搓上传 → 审核发布）----
 def upsert_publication(period, typ, title, html_path):

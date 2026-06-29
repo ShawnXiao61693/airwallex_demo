@@ -1,0 +1,34 @@
+{
+  "AE": {
+    "name": "Alex",
+    "role_desc": "AE · 拓新销售（Hunter），跨境电商方向",
+    "clients": [
+      {"name": "潮野 Outdoor", "industry": "潮玩户外独立站", "stage": "潜客",
+       "profile": "年 GMV 约 1.2 亿，欧美市场为主，目前用 PingPong 收款，常抱怨提现汇损高、到账慢。"},
+      {"name": "微醺好物", "industry": "3C 小家电", "stage": "潜客",
+       "profile": "刚入驻 TikTok Shop 美区，急需美元本地收款账户，还没定支付服务商。"},
+      {"name": "拓世家居", "industry": "家居品牌出海", "stage": "潜客",
+       "profile": "正在拓展拉美市场，需要巴西雷亚尔、墨西哥比索的本地收款与清算。"},
+      {"name": "简白美妆", "industry": "美妆 DTC", "stage": "已成交",
+       "profile": "已用 Airwallex 多币种收款账户，月流水稳定增长，主攻欧美独立站。"},
+      {"name": "萌芽母婴", "industry": "母婴跨境电商", "stage": "已成交",
+       "profile": "用 Airwallex 收单 + 付款给海外网红/达人做带货，付款币种多。"}
+    ]
+  },
+  "AM": {
+    "name": "Cindy",
+    "role_desc": "AM · 客户成功（Farmer），SaaS 方向，负责存量客户维护与扩量",
+    "clients": [
+      {"name": "协律云", "industry": "团队协作 SaaS", "stage": "已成交",
+       "profile": "出海东南亚，用 Airwallex 收多币种订阅费，近期在加新市场。"},
+      {"name": "灵感设计", "industry": "设计工具 SaaS", "stage": "已成交",
+       "profile": "用 Airwallex 收全球订阅 + 给海外签约设计师发卡结算。"},
+      {"name": "数擎分析", "industry": "数据分析 SaaS", "stage": "已成交",
+       "profile": "用 Airwallex 付款给海外云厂商与外包团队，付款量大、关注汇率成本。"},
+      {"name": "像素工坊", "industry": "出海游戏 / 工具 SaaS", "stage": "已成交",
+       "profile": "用 Airwallex 多币种结算，并给海外远程团队发薪。"},
+      {"name": "智答 AI", "industry": "AI 工具出海", "stage": "已成交",
+       "profile": "全球订阅收款，多币种回款，对汇率波动和到账时效敏感。"}
+    ]
+  }
+}

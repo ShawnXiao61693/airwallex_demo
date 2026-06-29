@@ -71,14 +71,13 @@
   <div id="intelList"></div>
 </div>
 
-<!-- 话术 modal -->
+<!-- 匹配客户 modal -->
 <div class="modal-bg" id="modal">
   <div class="modal">
     <button class="modal-x" onclick="closeModal()">×</button>
-    <div class="eyebrow">结合你的客户 · 生成话术</div>
+    <div class="eyebrow" id="mEyebrow">匹配我的客户 · 实时分析</div>
     <h3 id="mTitle"></h3>
-    <div class="pitch" id="mPitch"></div>
-    <p class="muted" style="font-size:12px;margin:0">示例输出。生产环境为实时调用 LLM，结合该用户负责的具体客户档案生成。</p>
+    <div id="mBody"></div>
   </div>
 </div>
 
@@ -216,24 +215,73 @@ function card(i){
     <div class="line"><b>动作：</b>${i.action||''}</div>
     <div class="foot">
       <span class="src">来源：${i.source||i.citation||''}</span>
-      <button class="btn btn-grad btn-sm" onclick="pitch(${i.id})">结合我的客户生成话术</button>
+      <div class="card-actions">
+        <span class="fbgroup">
+          <button class="fb" onclick="vote(${i.id},'up',this)" title="对我有用">👍</button>
+          <button class="fb" onclick="vote(${i.id},'down',this)" title="没用">👎</button>
+        </span>
+        <button class="btn btn-grad btn-sm" onclick="matchClient(${i.id})">匹配我的客户</button>
+      </div>
     </div>
   </div>`;
 }
-function pitch(id){
-  const i=CUR_ITEMS.find(x=>x.id===id); if(!i) return;
-  document.getElementById('mTitle').textContent=i.title;
-  document.getElementById('mPitch').textContent=
-`【开场】最近留意到「${i.title}」，想到您这边可能正好用得上。
-
-【为什么和您相关】${i.comment||''}
-
-【我们能做什么】${i.action||''}
-
-【建议下一步】方便的话约 15 分钟，我把对应的 Airwallex 方案和报价给您过一遍。`;
-  document.getElementById('modal').classList.add('show');
+/* ---- 有用/没用 反馈（埋点）---- */
+async function vote(id, v, el){
+  const wrap=el.closest('.fbgroup');
+  try{
+    await fetch('/api/feedback',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({news_id:id, role:ROLE, vote:v})});
+  }catch(e){ /* 演示环境忽略 */ }
+  wrap.innerHTML=`<span class="fb-tip">${v==='up'?'👍':'👎'} 谢谢反馈</span>`;
 }
+
+/* ---- 匹配我的客户（真 LLM）---- */
+let CUR_MATCHES=[], CUR_NEWS=null;
+function newsPayload(i){
+  return {title:i.title, summary:i.summary, comment:i.comment,
+          category:i.category, industry:i.industry};
+}
+function openModal(){document.getElementById('modal').classList.add('show');}
 function closeModal(){document.getElementById('modal').classList.remove('show');}
+
+async function matchClient(id){
+  const i=CUR_ITEMS.find(x=>x.id===id); if(!i) return;
+  CUR_NEWS=i; openModal();
+  document.getElementById('mTitle').textContent=i.title;
+  const body=document.getElementById('mBody');
+  body.innerHTML=`<div class="loader"><div class="spinner"></div><span>正在让 AI 比对你的客户名单…</span></div>`;
+  let res;
+  try{
+    res=await (await fetch('/api/match',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({role:ROLE, news:newsPayload(i)})})).json();
+  }catch(e){ body.innerHTML=`<p class="muted">匹配失败，请稍后再试。</p>`; return; }
+  CUR_MATCHES=res.matches||[];
+  if(!CUR_MATCHES.length){
+    body.innerHTML=`<p class="muted">这条暂时没匹配到你名单里的客户。</p>`; return;
+  }
+  body.innerHTML=CUR_MATCHES.map(matchCard).join('');
+}
+function matchCard(m, idx){
+  const stageCls = m.stage==='已成交' ? 'cat-我方生态' : 'cat-竞品';
+  return `<div class="mcli">
+    <div class="mcli-h"><strong>${m.client}</strong><span class="chip ${stageCls}">${m.stage||''}</span></div>
+    <div class="line"><b>为什么相关：</b>${m.why||''}</div>
+    <div class="line"><b>切入角度：</b>${m.angle||''}</div>
+    <button class="btn btn-grad btn-sm" onclick="genPitch(${idx}, this)">为「${m.client}」生成话术</button>
+    <div class="pitch-slot" id="pslot-${idx}"></div>
+  </div>`;
+}
+async function genPitch(idx, btn){
+  const m=CUR_MATCHES[idx]; const slot=document.getElementById('pslot-'+idx);
+  btn.disabled=true;
+  slot.innerHTML=`<div class="loader" style="padding:16px"><div class="spinner"></div><span>生成话术中…</span></div>`;
+  try{
+    const r=await (await fetch('/api/pitch',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({role:ROLE, client:m.client, news:newsPayload(CUR_NEWS)})})).json();
+    slot.innerHTML=`<div class="pitch">${r.pitch||'(空)'}</div>`;
+  }catch(e){ slot.innerHTML=`<p class="muted">生成失败，请重试。</p>`; }
+  btn.disabled=false;
+}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
 // 点空白关日历
 document.addEventListener('click',e=>{

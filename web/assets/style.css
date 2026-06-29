@@ -158,6 +158,19 @@ img{max-width:100%}
 .intel .line b{color:var(--ink)}
 .intel .foot{display:flex;align-items:center;justify-content:space-between;margin-top:14px;gap:12px;flex-wrap:wrap}
 .intel .src{font-family:var(--mono);font-size:11px;color:var(--muted-2)}
+.card-actions{display:flex;align-items:center;gap:8px}
+.fbgroup{display:inline-flex;gap:4px}
+.fb{border:1px solid var(--line);background:#fff;border-radius:999px;width:34px;height:30px;cursor:pointer;
+  font-size:14px;line-height:1;transition:.15s}
+.fb:hover{border-color:var(--violet);transform:translateY(-1px)}
+.fb-tip{font-family:var(--mono);font-size:11px;color:var(--ok)}
+/* 匹配客户弹窗里的客户卡 */
+.mcli{border:1px solid var(--line);border-radius:var(--radius-sm);padding:16px;margin-bottom:12px}
+.mcli-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.mcli-h strong{font-size:15px}
+.mcli .line{font-size:14px;color:#33373E;margin-bottom:5px}
+.mcli .btn-sm{margin-top:8px}
+.pitch-slot:not(:empty){margin-top:10px}
 .denoise{padding:18px 22px;border:1px dashed var(--line);border-radius:var(--radius);background:#fff;color:var(--muted);font-size:13.5px;margin-bottom:40px}
 .denoise b{color:var(--ink)}
 
