@@ -183,6 +183,9 @@ img{max-width:100%}
 .intel a{color:inherit}
 .intel a:hover{color:var(--violet)}
 .empty-day{padding:40px 24px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:var(--radius)}
+.loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:80px 24px;color:var(--muted);font-size:13px}
+.spinner{width:34px;height:34px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--violet);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(26,29,33,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:24px}

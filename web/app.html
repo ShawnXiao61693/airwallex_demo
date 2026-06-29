@@ -105,11 +105,21 @@ document.querySelectorAll('.role-opt').forEach(o=>o.onclick=()=>{
   o.classList.add('sel'); ROLE=o.dataset.role;
 });
 
+const MIN_SPIN=500;      // 加载动画最短展示时长（ms）
+function showLoader(){
+  document.getElementById('intelList').innerHTML=
+    `<div class="loader"><div class="spinner"></div><span>正在加载日报…</span></div>`;
+}
+function minWait(t0){ return new Promise(r=>setTimeout(r, Math.max(0, MIN_SPIN-(Date.now()-t0)))); }
+
 async function enter(){
   document.getElementById('authView').style.display='none';
   document.getElementById('reportView').style.display='block';
   const ind=document.getElementById('industry').value;
   document.getElementById('who').textContent=`你好，张三（${ROLE==='AE'?'AE · 拓新':'AM · 客户成功'} · ${ind}）`;
+  document.getElementById('dateBtnLabel').textContent='加载中…';
+  showLoader();
+  const t0=Date.now();
   // 读日报索引，建立"哪些天有日报"
   try{
     const idx=await (await fetch(`${REPORT_DIR}/index.json`,{cache:'no-store'})).json();
@@ -118,6 +128,7 @@ async function enter(){
   }catch(e){ AVAIL={}; }
   const dates=Object.keys(AVAIL).sort();
   if(!dates.length){
+    await minWait(t0);
     document.getElementById('dateBtnLabel').textContent='暂无日报';
     document.getElementById('intelList').innerHTML=`<div class="empty-day">还没有生成日报。引擎跑过 collect → refine → compose 后这里就有内容了。</div>`;
     return;
@@ -125,7 +136,7 @@ async function enter(){
   SEL_DATE=dates[dates.length-1];          // 默认最新一天
   const d=new Date(SEL_DATE); calY=d.getFullYear(); calM=d.getMonth();
   renderCal();
-  loadDay(SEL_DATE);
+  await loadDay(SEL_DATE, t0);             // 复用同一计时，整段加载 ≥ MIN_SPIN
 }
 
 /* ---- 日历 ---- */
@@ -160,13 +171,16 @@ function pickDay(ds,e){
   renderCal(); loadDay(ds);
 }
 
-/* ---- 加载某一天的日报 ---- */
-async function loadDay(date){
+/* ---- 加载某一天的日报（t0 为空则自行计时并显示加载动画）---- */
+async function loadDay(date, t0){
+  const start = (t0!=null) ? t0 : (showLoader(), Date.now());
   document.getElementById('dateBtnLabel').textContent=date;
   document.getElementById('rTitle').textContent=`日报 · ${date}`;
-  let rep;
+  let rep=null;
   try{ rep=await (await fetch(`${REPORT_DIR}/report_${date}_${ROLE}.json`,{cache:'no-store'})).json(); }
-  catch(e){
+  catch(e){ rep=null; }
+  await minWait(start);
+  if(!rep){
     document.getElementById('rMeta').textContent='';
     document.getElementById('intelList').innerHTML=`<div class="empty-day">这一天暂无日报。</div>`;
     CUR_ITEMS=[]; return;
