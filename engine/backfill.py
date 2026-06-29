@@ -2,6 +2,7 @@
 # 用法：python backfill.py 2026-06-22 2026-06-28
 import sys, time, datetime, requests
 from config import BRAVE_API_KEY, BRAVE_QUERIES, BRAVE_COUNT
+from lang import detect_lang
 import db, refine, compose
 
 BRAVE_URL = "https://api.search.brave.com/res/v1/news/search"
@@ -36,11 +37,13 @@ def collect_day(day):
             if not a.get('url'):
                 continue
             desc = a.get('description') or ''
+            text = ((a.get('title') or '') + ' — ' + desc).strip(' —')
             db.upsert_raw({
                 'url': a.get('url'), 'title': a.get('title'),
                 'source': (a.get('meta_url') or {}).get('hostname') or (a.get('profile') or {}).get('name'),
+                'lang': detect_lang(text),
                 'published_at': a.get('page_age') or a.get('age'),
-                'raw_content': ((a.get('title') or '') + ' — ' + desc).strip(' —'),
+                'raw_content': text,
                 'bucket_date': day.isoformat(),
             })
             n += 1

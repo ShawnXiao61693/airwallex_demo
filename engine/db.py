@@ -111,9 +111,11 @@ def list_bucket_dates():
             "SELECT DISTINCT bucket_date FROM news WHERE status='refined' AND relevant=1 ORDER BY bucket_date").fetchall()
         return [r['bucket_date'] for r in rows]
 
-def get_candidates(bucket_date, role, limit=40):
+def get_candidates(bucket_date, role, limit=60, lang=None):
+    q = ["SELECT * FROM news WHERE status='refined' AND relevant=1 AND bucket_date=%s AND roles LIKE %s"]
+    params = [bucket_date, f'%"{role}"%']
+    if lang:                          # 'zh' / 'en'，按语言取候选
+        q.append("AND lang=%s"); params.append(lang)
+    q.append("ORDER BY s_total DESC LIMIT %s"); params.append(limit)
     with conn() as c:
-        return c.execute(
-            """SELECT * FROM news WHERE status='refined' AND relevant=1
-               AND bucket_date=%s AND roles LIKE %s ORDER BY s_total DESC LIMIT %s""",
-            (bucket_date, f'%"{role}"%', limit)).fetchall()
+        return c.execute(" ".join(q), tuple(params)).fetchall()

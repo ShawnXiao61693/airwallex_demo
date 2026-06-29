@@ -45,4 +45,6 @@ LLM_BASE_URL = os.getenv('LLM_BASE_URL', 'https://api.openai.com/v1')
 LLM_MODEL = os.getenv('LLM_MODEL', 'gpt-4o-mini')
 
 DB_PATH = os.getenv('DB_PATH', 'engine.db')
-DAILY_TOP_N = 8            # 每个角色日报取多少条
+DAILY_TOP_N = 8            # 每个角色日报总条数
+DAILY_ZH = 6               # 其中中文条数（排在前）
+DAILY_EN = 2               # 其中英文条数（垫底）；当天英文不足则用中文补满 8 条
