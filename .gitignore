@@ -8,6 +8,7 @@ dist/
 # 环境与密钥（绝不提交）
 .env
 .env.*
+!.env.example
 *.key
 *.pem
 secrets.*
