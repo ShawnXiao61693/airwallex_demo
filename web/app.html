@@ -56,20 +56,29 @@
   <div class="report-top">
     <div>
       <div class="eyebrow">每日情报</div>
-      <h1 id="rTitle">日报 · 2026-06-28</h1>
+      <h1 id="rTitle">日报</h1>
       <div class="report-meta" id="rMeta"></div>
     </div>
     <div class="who" id="who"></div>
   </div>
 
-  <div class="tabs">
-    <button class="tab on" data-cad="日报" onclick="switchCad(this)">日报</button>
-    <button class="tab" data-cad="周报" onclick="switchCad(this)">周报</button>
-    <button class="tab" data-cad="月报" onclick="switchCad(this)">月报</button>
+  <!-- 日期选择器（日历下拉）-->
+  <div class="datebar" id="datebar">
+    <button class="datebtn" onclick="toggleCal(event)">
+      <span>📅</span><span id="dateBtnLabel">选择日期</span><span class="caret">▾</span>
+    </button>
+    <div class="calpop" id="calpop">
+      <div class="cal-head">
+        <button class="cal-nav" onclick="calMonth(-1,event)">‹</button>
+        <span class="cal-title" id="calTitle"></span>
+        <button class="cal-nav" onclick="calMonth(1,event)">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+      <div class="cal-foot"><span class="dot-legend"></span>有日报的日期可点击</div>
+    </div>
   </div>
 
   <div id="intelList"></div>
-  <div id="denoiseBox"></div>
 </div>
 
 <!-- 话术 modal -->
@@ -83,68 +92,132 @@
   </div>
 </div>
 
-<script src="assets/data.js"></script>
 <script>
-let ROLE="AE", CAD="日报";
+const REPORT_DIR='data/reports';
+let ROLE="AE";
+let AVAIL={};          // 当前角色：date -> count（哪些天有日报）
+let CUR_ITEMS=[];      // 当前展示的情报，供话术 modal 取数
+let SEL_DATE=null;     // 选中的日期
+let calY, calM;        // 日历当前显示的年/月（0-based month）
+
 document.querySelectorAll('.role-opt').forEach(o=>o.onclick=()=>{
   document.querySelectorAll('.role-opt').forEach(x=>x.classList.remove('sel'));
   o.classList.add('sel'); ROLE=o.dataset.role;
 });
-function enter(){
+
+async function enter(){
   document.getElementById('authView').style.display='none';
   document.getElementById('reportView').style.display='block';
   const ind=document.getElementById('industry').value;
   document.getElementById('who').textContent=`你好，张三（${ROLE==='AE'?'AE · 拓新':'AM · 客户成功'} · ${ind}）`;
-  render();
+  // 读日报索引，建立"哪些天有日报"
+  try{
+    const idx=await (await fetch(`${REPORT_DIR}/index.json`,{cache:'no-store'})).json();
+    AVAIL={};
+    (idx.reports||[]).filter(r=>r.role===ROLE).forEach(r=>{AVAIL[r.date]=r.count;});
+  }catch(e){ AVAIL={}; }
+  const dates=Object.keys(AVAIL).sort();
+  if(!dates.length){
+    document.getElementById('dateBtnLabel').textContent='暂无日报';
+    document.getElementById('intelList').innerHTML=`<div class="empty-day">还没有生成日报。引擎跑过 collect → refine → compose 后这里就有内容了。</div>`;
+    return;
+  }
+  SEL_DATE=dates[dates.length-1];          // 默认最新一天
+  const d=new Date(SEL_DATE); calY=d.getFullYear(); calM=d.getMonth();
+  renderCal();
+  loadDay(SEL_DATE);
 }
-function switchCad(btn){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
-  btn.classList.add('on'); CAD=btn.dataset.cad; render();
+
+/* ---- 日历 ---- */
+function toggleCal(e){ e&&e.stopPropagation(); document.getElementById('datebar').classList.toggle('open'); }
+function calMonth(delta,e){
+  e&&e.stopPropagation();
+  calM+=delta; if(calM<0){calM=11;calY--;} if(calM>11){calM=0;calY++;}
+  renderCal();
 }
-function render(){
-  const t={'日报':'日报 · 2026-06-28','周报':'周报 · 2026 第26周','月报':'月报 · 2026年6月'};
-  document.getElementById('rTitle').textContent=t[CAD];
-  // 日报按角色过滤；周报/月报沿用全部（暂同内容）
-  const items = CAD==='日报' ? INTEL.filter(i=>i.roles.includes(ROLE)) : INTEL;
-  document.getElementById('rMeta').textContent =
-    CAD==='日报' ? `按「${ROLE}」过滤 · 保留 ${items.length} 条可行动情报` : `本期 ${items.length} 条 · 暂沿用同一内容`;
-  document.getElementById('intelList').innerHTML = items.map(card).join('');
-  document.getElementById('denoiseBox').innerHTML = CAD==='日报'
-    ? `<div class="denoise"><b>降噪区（今日已过滤）</b><br>`+DENOISE.map(d=>'· '+d).join('<br>')+`</div>` : '';
+function renderCal(){
+  document.getElementById('calTitle').textContent=`${calY}年${calM+1}月`;
+  const first=new Date(calY,calM,1);
+  let lead=(first.getDay()+6)%7;           // 周一为一周起点
+  const days=new Date(calY,calM+1,0).getDate();
+  const todayStr=new Date().toISOString().slice(0,10);
+  let html=['一','二','三','四','五','六','日'].map(d=>`<span class="cal-dow">${d}</span>`).join('');
+  for(let i=0;i<lead;i++) html+=`<span class="cal-day"></span>`;
+  for(let day=1;day<=days;day++){
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const cls=['cal-day'];
+    if(AVAIL[ds]!=null) cls.push('has');
+    if(ds===SEL_DATE) cls.push('sel');
+    if(ds===todayStr) cls.push('today');
+    const click=AVAIL[ds]!=null?`onclick="pickDay('${ds}',event)"`:'';
+    html+=`<span class="${cls.join(' ')}" ${click}>${day}</span>`;
+  }
+  document.getElementById('calGrid').innerHTML=html;
 }
+function pickDay(ds,e){
+  e&&e.stopPropagation();
+  SEL_DATE=ds; document.getElementById('datebar').classList.remove('open');
+  renderCal(); loadDay(ds);
+}
+
+/* ---- 加载某一天的日报 ---- */
+async function loadDay(date){
+  document.getElementById('dateBtnLabel').textContent=date;
+  document.getElementById('rTitle').textContent=`日报 · ${date}`;
+  let rep;
+  try{ rep=await (await fetch(`${REPORT_DIR}/report_${date}_${ROLE}.json`,{cache:'no-store'})).json(); }
+  catch(e){
+    document.getElementById('rMeta').textContent='';
+    document.getElementById('intelList').innerHTML=`<div class="empty-day">这一天暂无日报。</div>`;
+    CUR_ITEMS=[]; return;
+  }
+  CUR_ITEMS=rep.items||[];
+  document.getElementById('rMeta').textContent=
+    (rep.lede?rep.lede+' · ':'')+`按「${ROLE}」精选 ${CUR_ITEMS.length} 条可行动情报`;
+  document.getElementById('intelList').innerHTML=CUR_ITEMS.map(card).join('');
+}
+
 function card(i){
+  const cats=(i.category||[]).map(c=>`<span class="chip cat-${c}">${c}</span>`).join('');
+  const inds=(i.industry||[]).map(c=>`<span class="chip">${c}</span>`).join('');
+  const hot=(i.score||0)>=0.8;
+  const title=i.url?`<a href="${i.url}" target="_blank" rel="noopener">${i.title}</a>`:i.title;
   return `<div class="card intel">
     <div class="meta">
-      ${i.hot?'<span class="signal-hot">🔥 高信号</span>':''}
-      <span class="chip cat-${i.category}">${i.category}</span>
-      <span class="chip">${i.signal}</span>
-      <span class="badge-role">${i.roles.join(' / ')}</span>
-      <span class="chip">${i.industry}</span>
+      ${hot?'<span class="signal-hot">🔥 高信号</span>':''}
+      ${cats}
+      ${i.signal_type?`<span class="chip">${i.signal_type}</span>`:''}
+      ${inds}
     </div>
-    <h3>${i.title}</h3>
-    <div class="line"><b>点评：</b>${i.comment}</div>
-    <div class="line"><b>动作：</b>${i.action}</div>
+    <h3>${title}</h3>
+    <div class="line"><b>点评：</b>${i.comment||''}</div>
+    <div class="line"><b>动作：</b>${i.action||''}</div>
     <div class="foot">
-      <span class="src">来源：${i.source}</span>
+      <span class="src">来源：${i.source||i.citation||''}</span>
       <button class="btn btn-grad btn-sm" onclick="pitch(${i.id})">结合我的客户生成话术</button>
     </div>
   </div>`;
 }
 function pitch(id){
-  const i=INTEL.find(x=>x.id===id);
+  const i=CUR_ITEMS.find(x=>x.id===id); if(!i) return;
   document.getElementById('mTitle').textContent=i.title;
   document.getElementById('mPitch').textContent=
 `【开场】最近留意到「${i.title}」，想到您这边可能正好用得上。
 
-【为什么和您相关】${i.comment}
+【为什么和您相关】${i.comment||''}
 
-【我们能做什么】${i.action}
+【我们能做什么】${i.action||''}
 
 【建议下一步】方便的话约 15 分钟，我把对应的 Airwallex 方案和报价给您过一遍。`;
   document.getElementById('modal').classList.add('show');
 }
 function closeModal(){document.getElementById('modal').classList.remove('show');}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target.id==='modal')closeModal();});
+// 点空白关日历
+document.addEventListener('click',e=>{
+  const bar=document.getElementById('datebar');
+  if(bar.classList.contains('open') && !bar.contains(e.target)) bar.classList.remove('open');
+});
 </script>
 </body>
 </html>
