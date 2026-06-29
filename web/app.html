@@ -211,7 +211,8 @@ function card(i){
       ${inds}
     </div>
     <h3>${title}</h3>
-    <div class="line"><b>点评：</b>${i.comment||''}</div>
+    ${i.summary?`<div class="line"><b>概览：</b>${i.summary}${i.comment?' '+i.comment:''}</div>`
+               :`<div class="line"><b>点评：</b>${i.comment||''}</div>`}
     <div class="line"><b>动作：</b>${i.action||''}</div>
     <div class="foot">
       <span class="src">来源：${i.source||i.citation||''}</span>

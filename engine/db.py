@@ -21,10 +21,13 @@ CREATE TABLE IF NOT EXISTS news (
   relevant INTEGER,
   category TEXT, roles TEXT, industry TEXT, signal_type TEXT,
   s_rel REAL, s_time REAL, s_act REAL, s_cred REAL, s_total REAL,
-  comment TEXT, action TEXT, products TEXT, citation TEXT,
+  summary TEXT, comment TEXT, action TEXT, products TEXT, citation TEXT,
   refined_at TEXT
 );
 """
+
+# 历史库可能没有 summary 列，启动时补一下
+MIGRATIONS = ["ALTER TABLE news ADD COLUMN IF NOT EXISTS summary TEXT;"]
 
 SCHEMA_PUB = """
 CREATE TABLE IF NOT EXISTS publications (
@@ -43,6 +46,8 @@ def init_db():
     with conn() as c:
         c.execute(SCHEMA)
         c.execute(SCHEMA_PUB)
+        for m in MIGRATIONS:
+            c.execute(m)
 
 # ---- 周/月报出版物（手搓上传 → 审核发布）----
 def upsert_publication(period, typ, title, html_path):
@@ -85,7 +90,7 @@ def update_refined(news_id, r):
     with conn() as c:
         c.execute(
             """UPDATE news SET status=%s, relevant=%s, category=%s, roles=%s, industry=%s, signal_type=%s,
-               s_rel=%s, s_time=%s, s_act=%s, s_cred=%s, s_total=%s, comment=%s, action=%s, products=%s, citation=%s, refined_at=%s
+               s_rel=%s, s_time=%s, s_act=%s, s_cred=%s, s_total=%s, summary=%s, comment=%s, action=%s, products=%s, citation=%s, refined_at=%s
                WHERE id=%s""",
             (status, 1 if r.get('relevant') else 0,
              json.dumps(r.get('category', []), ensure_ascii=False),
@@ -93,7 +98,7 @@ def update_refined(news_id, r):
              json.dumps(r.get('industry', []), ensure_ascii=False),
              r.get('signal_type'),
              r.get('s_rel'), r.get('s_time'), r.get('s_act'), r.get('s_cred'), r.get('s_total'),
-             r.get('comment'), r.get('action'),
+             r.get('summary'), r.get('comment'), r.get('action'),
              json.dumps(r.get('products', []), ensure_ascii=False), r.get('citation'),
              datetime.datetime.utcnow().isoformat(), news_id))
 

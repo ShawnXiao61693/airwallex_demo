@@ -28,6 +28,7 @@ PROMPT = """你是 Airwallex（空中云汇，跨境支付/金融科技公司）
 {{"relevant": true/false,
   "category": ["..."], "roles": ["AE"|"AM"], "industry": ["..."], "signal_type": "...",
   "s_rel": 0.0, "s_time": 0.0, "s_act": 0.0, "s_cred": 0.0, "s_total": 0.0,
+  "summary": "一句话客观概述这条新闻本身讲了什么(中文，不带评价)",
   "comment": "一句话点评：这条对销售意味着什么(so-what)，要具体",
   "action": "建议销售下一步做什么动作，要具体",
   "products": ["关联的 Airwallex 产品"],

@@ -47,7 +47,7 @@ def _item(r):
             'lang': r['lang'],
             'category': json.loads(r['category'] or '[]'), 'signal_type': r['signal_type'],
             'industry': json.loads(r['industry'] or '[]'), 'score': round(r['s_total'] or 0, 2),
-            'comment': r['comment'], 'action': r['action'],
+            'summary': r['summary'], 'comment': r['comment'], 'action': r['action'],
             'products': json.loads(r['products'] or '[]'), 'citation': r['citation']}
 
 def _compose_one(date, role):
