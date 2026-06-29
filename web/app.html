@@ -17,37 +17,23 @@
   </div>
 </header>
 
-<!-- 注册 -->
+<!-- 选择身份 -->
 <div id="authView" class="auth-wrap">
   <div class="card auth-card">
-    <h1>注册 / 登录</h1>
-    <p class="sub">选择你的身份，我们只把跟你相关的情报推给你。</p>
-    <div class="field">
-      <label>工作邮箱</label>
-      <input id="email" type="email" placeholder="you@airwallex.com" value="zhang.san@airwallex.com">
-    </div>
-    <div class="field">
-      <label>你的身份</label>
-      <div class="role-opts">
-        <div class="role-opt sel" data-role="AE">
-          <strong>AE · 拓新销售</strong><span>Hunter，签新客</span>
-        </div>
-        <div class="role-opt" data-role="AM">
-          <strong>AM · 客户成功</strong><span>Farmer，维护扩量</span>
-        </div>
+    <h1>选择身份进入</h1>
+    <p class="sub">同一天的情报，AE 和 AM 看到的不一样——选一个身份体验。</p>
+    <div class="user-opts">
+      <div class="user-opt" onclick="enterAs('AE')">
+        <div class="ua ua-ae">A</div>
+        <div class="ut"><strong>Alex</strong><span>AE · 拓新销售（Hunter）· 跨境电商</span></div>
+        <span class="ugo">→</span>
+      </div>
+      <div class="user-opt" onclick="enterAs('AM')">
+        <div class="ua ua-am">C</div>
+        <div class="ut"><strong>Cindy</strong><span>AM · 客户成功（Farmer）· SaaS</span></div>
+        <span class="ugo">→</span>
       </div>
     </div>
-    <div class="field">
-      <label>负责行业</label>
-      <select id="industry">
-        <option>电商 / 独立站</option>
-        <option>游戏出海</option>
-        <option>OTA / 旅游</option>
-        <option>SaaS</option>
-        <option>B2B 外贸</option>
-      </select>
-    </div>
-    <button class="btn btn-grad" style="width:100%;justify-content:center" onclick="enter()">注册并进入</button>
   </div>
 </div>
 
@@ -105,10 +91,12 @@ let CUR_ITEMS=[];      // 当前展示的情报，供话术 modal 取数
 let SEL_DATE=null;     // 选中的日期
 let calY, calM;        // 日历当前显示的年/月（0-based month）
 
-document.querySelectorAll('.role-opt').forEach(o=>o.onclick=()=>{
-  document.querySelectorAll('.role-opt').forEach(x=>x.classList.remove('sel'));
-  o.classList.add('sel'); ROLE=o.dataset.role;
-});
+// 只有两个用户：Alex(AE) / Cindy(AM)，用于对比两个角色看到的日报差异
+const USERS={
+  AE:{name:'Alex',  who:'AE · 拓新 · 跨境电商'},
+  AM:{name:'Cindy', who:'AM · 客户成功 · SaaS'},
+};
+function enterAs(role){ ROLE=role; enter(); }
 
 const MIN_SPIN=500;      // 加载动画最短展示时长（ms）
 function showLoader(){
@@ -120,8 +108,8 @@ function minWait(t0){ return new Promise(r=>setTimeout(r, Math.max(0, MIN_SPIN-(
 async function enter(){
   document.getElementById('authView').style.display='none';
   document.getElementById('reportView').style.display='block';
-  const ind=document.getElementById('industry').value;
-  document.getElementById('who').textContent=`你好，张三（${ROLE==='AE'?'AE · 拓新':'AM · 客户成功'} · ${ind}）`;
+  const u=USERS[ROLE];
+  document.getElementById('who').textContent=`你好，${u.name}（${u.who}）`;
   document.getElementById('dateBtnLabel').textContent='加载中…';
   showLoader();
   const t0=Date.now();
