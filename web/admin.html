@@ -65,7 +65,7 @@
     <!-- 日报审核 -->
     <section id="p-daily" class="panel">
       <h1>日报审核</h1>
-      <p class="desc">引擎按天策展出候选日报（草稿），人工预览后确认发布。</p>
+      <p class="desc">引擎按天编排出候选日报（草稿），人工预览后确认发布。</p>
       <div class="card sched-card" onclick="openSched('日报')">
         <h4>⏰ 时间设置</h4>
         <div class="when"><span class="lab">审核时间：</span>每天 17:00</div>
@@ -78,7 +78,7 @@
     <!-- 周报审核 -->
     <section id="p-weekly" class="panel">
       <h1>周报审核</h1>
-      <p class="desc">周报为人工策展、脚本上传的成品；按周排期，发布日 = 当周周一。</p>
+      <p class="desc">周报为人工编排、脚本上传的成品；按周排期，发布日 = 当周周一。</p>
       <div class="card sched-card" onclick="openSched('周报')">
         <h4>⏰ 时间设置</h4>
         <div class="when"><span class="lab">审核时间：</span>每周五 15:00</div>
@@ -190,7 +190,7 @@ function nav(el){
   el.classList.add('on');
   document.getElementById(el.dataset.p).classList.add('on');
 }
-// ===== 日报审核：拉取按天策展出的报告草稿 =====
+// ===== 日报审核：拉取按天编排出的报告草稿 =====
 const RDIR='data/reports/';
 let REPORTS=null, APPROVED={};
 async function loadReports(){

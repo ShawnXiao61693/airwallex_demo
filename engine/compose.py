@@ -1,4 +1,4 @@
-# Composer（制作 · 仅日报）—— 按"天 × 角色"用策展 LLM 出日报：去重 + 多样化 + 排序 + 导语。
+# Composer（制作 · 仅日报）—— 按"天 × 角色"用编排 LLM 出日报：去重 + 多样化 + 排序 + 导语。
 import json, os, re
 from openai import OpenAI
 from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, ROLES, DAILY_TOP_N
@@ -35,7 +35,7 @@ def _curate(date, role, rows):
         d = json.loads(m.group(0))
         return d.get('lede', ''), [int(x) for x in d.get('item_ids', [])]
     except Exception as e:
-        print(f"  策展失败 {date}/{role}: {e} → 兜底按分数 top-N")
+        print(f"  编排失败 {date}/{role}: {e} → 兜底按分数 top-N")
         return '', [r['id'] for r in rows[:DAILY_TOP_N]]
 
 def _item(r):

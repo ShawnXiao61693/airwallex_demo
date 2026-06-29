@@ -1,4 +1,4 @@
-# 按天回填历史日报：对日期区间内每一天，用 Brave 拉那天的新闻 → 提炼 → 按天策展出日报。
+# 按天回填历史日报：对日期区间内每一天，用 Brave 拉那天的新闻 → 提炼 → 按天编排出日报。
 # 用法：python backfill.py 2026-06-22 2026-06-28
 import sys, time, datetime, requests
 from config import BRAVE_API_KEY, BRAVE_QUERIES, BRAVE_COUNT
@@ -53,4 +53,4 @@ if __name__ == '__main__':
     for day in daterange(start, end):
         collect_day(day)
     refine.refine()       # 提炼所有新 raw（含各天）
-    compose.compose_all() # 按天 × 角色 策展出日报
+    compose.compose_all() # 按天 × 角色 编排出日报
