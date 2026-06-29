@@ -62,11 +62,15 @@
     <div class="who" id="who"></div>
   </div>
 
-  <!-- 日期选择器（日历下拉）-->
+  <!-- 日期选择器（前一天 / 日历下拉 / 后一天）-->
   <div class="datebar" id="datebar">
-    <button class="datebtn" onclick="toggleCal(event)">
-      <span>📅</span><span id="dateBtnLabel">选择日期</span><span class="caret">▾</span>
-    </button>
+    <div class="dayrow">
+      <button class="daynav" id="prevDay" onclick="stepDay(-1)">‹ 前一天</button>
+      <button class="datebtn" onclick="toggleCal(event)">
+        <span>📅</span><span id="dateBtnLabel">选择日期</span><span class="caret">▾</span>
+      </button>
+      <button class="daynav" id="nextDay" onclick="stepDay(1)">后一天 ›</button>
+    </div>
     <div class="calpop" id="calpop">
       <div class="cal-head">
         <button class="cal-nav" onclick="calMonth(-1,event)">‹</button>
@@ -96,6 +100,7 @@
 const REPORT_DIR='data/reports';
 let ROLE="AE";
 let AVAIL={};          // 当前角色：date -> count（哪些天有日报）
+let DATES=[];          // 有日报的日期，升序
 let CUR_ITEMS=[];      // 当前展示的情报，供话术 modal 取数
 let SEL_DATE=null;     // 选中的日期
 let calY, calM;        // 日历当前显示的年/月（0-based month）
@@ -126,14 +131,14 @@ async function enter(){
     AVAIL={};
     (idx.reports||[]).filter(r=>r.role===ROLE).forEach(r=>{AVAIL[r.date]=r.count;});
   }catch(e){ AVAIL={}; }
-  const dates=Object.keys(AVAIL).sort();
-  if(!dates.length){
+  DATES=Object.keys(AVAIL).sort();
+  if(!DATES.length){
     await minWait(t0);
     document.getElementById('dateBtnLabel').textContent='暂无日报';
     document.getElementById('intelList').innerHTML=`<div class="empty-day">还没有生成日报。引擎跑过 collect → refine → compose 后这里就有内容了。</div>`;
     return;
   }
-  SEL_DATE=dates[dates.length-1];          // 默认最新一天
+  SEL_DATE=DATES[DATES.length-1];          // 默认最新一天
   const d=new Date(SEL_DATE); calY=d.getFullYear(); calM=d.getMonth();
   renderCal();
   await loadDay(SEL_DATE, t0);             // 复用同一计时，整段加载 ≥ MIN_SPIN
@@ -170,10 +175,24 @@ function pickDay(ds,e){
   SEL_DATE=ds; document.getElementById('datebar').classList.remove('open');
   renderCal(); loadDay(ds);
 }
+/* 前一天 / 后一天：在"有日报的日期"之间跳，到边界则禁用 */
+function stepDay(dir){
+  const i=DATES.indexOf(SEL_DATE), ni=i+dir;
+  if(i<0 || ni<0 || ni>=DATES.length) return;
+  SEL_DATE=DATES[ni];
+  const d=new Date(SEL_DATE); calY=d.getFullYear(); calM=d.getMonth();
+  renderCal(); loadDay(SEL_DATE);
+}
+function updateDayNav(){
+  const i=DATES.indexOf(SEL_DATE);
+  document.getElementById('prevDay').disabled = (i<=0);
+  document.getElementById('nextDay').disabled = (i<0 || i>=DATES.length-1);
+}
 
 /* ---- 加载某一天的日报（t0 为空则自行计时并显示加载动画）---- */
 async function loadDay(date, t0){
   const start = (t0!=null) ? t0 : (showLoader(), Date.now());
+  SEL_DATE=date; updateDayNav();
   document.getElementById('dateBtnLabel').textContent=date;
   document.getElementById('rTitle').textContent=`日报 · ${date}`;
   let rep=null;

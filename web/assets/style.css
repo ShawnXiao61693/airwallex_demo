@@ -153,8 +153,13 @@ img{max-width:100%}
 .chip.cat-汇率宏观{background:rgba(31,169,113,.12);color:#137A50}
 .chip.cat-目标行业{background:rgba(26,29,33,.07);color:#1A1D21}
 
-/* ---- 日期选择器（日历下拉）---- */
+/* ---- 日期选择器（前一天 / 日历下拉 / 后一天）---- */
 .datebar{position:relative;padding:14px 0 24px}
+.dayrow{display:flex;align-items:center;gap:10px}
+.daynav{font-family:var(--mono);font-size:13px;padding:9px 14px;border-radius:999px;
+  border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink);transition:.15s;white-space:nowrap}
+.daynav:hover:not(:disabled){border-color:var(--violet);color:var(--violet)}
+.daynav:disabled{opacity:.4;cursor:not-allowed}
 .datebtn{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-size:14px;
   padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:#fff;cursor:pointer;color:var(--ink)}
 .datebtn:hover{border-color:var(--violet)}
