@@ -1,6 +1,6 @@
 # Refiner（提炼 · Agent/LLM）—— 读 raw → 逐条判断相关性/打标/评分/炼点评动作 → 回写
 # 这是我们的差异化核心，也是可 review 的部分：逻辑全在下面这段 prompt 里。
-import json, re
+import json, re, time, concurrent.futures as cf
 from openai import OpenAI
 from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL, CATEGORIES, INDUSTRIES
 import db
@@ -37,23 +37,39 @@ def _parse(txt):
     m = re.search(r'\{.*\}', txt, re.S)
     return json.loads(m.group(0)) if m else None
 
-def refine():
-    rows = db.get_unrefined()
-    print(f"[refine] 待加工 {len(rows)} 条")
-    ok = 0
-    for row in rows:
-        p = PROMPT.format(cats="/".join(CATEGORIES), inds="/".join(INDUSTRIES),
-                          title=row['title'], summary=(row['raw_content'] or '')[:500],
-                          source=row['source'], date=row['published_at'])
+WORKERS = 12   # 并发条数
+
+def _refine_one(row):
+    p = PROMPT.format(cats="/".join(CATEGORIES), inds="/".join(INDUSTRIES),
+                      title=row['title'], summary=(row['raw_content'] or '')[:500],
+                      source=row['source'], date=row['published_at'])
+    for attempt in range(3):                      # 限流/抖动重试
         try:
             resp = client.chat.completions.create(
-                model=LLM_MODEL, messages=[{"role": "user", "content": p}], temperature=0.2)
+                model=LLM_MODEL, messages=[{"role": "user", "content": p}],
+                temperature=0.2, timeout=60)
             r = _parse(resp.choices[0].message.content)
             if r is None:
                 raise ValueError("无法解析 JSON")
-        except Exception as e:
-            print(f"[refine] 跳过 id={row['id']}: {e}")
-            continue
-        db.update_refined(row['id'], r)
-        ok += 1
+            return row['id'], r
+        except Exception:
+            if attempt < 2:
+                time.sleep(2 * (attempt + 1)); continue
+            raise
+
+def refine(workers=WORKERS):
+    rows = db.get_unrefined()
+    print(f"[refine] 待加工 {len(rows)} 条，并发 {workers}")
+    ok = 0
+    with cf.ThreadPoolExecutor(max_workers=workers) as ex:
+        futs = {ex.submit(_refine_one, row): row['id'] for row in rows}
+        for fut in cf.as_completed(futs):
+            rid = futs[fut]
+            try:
+                _id, r = fut.result()
+            except Exception as e:
+                print(f"[refine] 跳过 id={rid}: {e}")
+                continue
+            db.update_refined(_id, r)             # 主线程写库，避免 SQLite 并发锁
+            ok += 1
     print(f"[refine] 完成，成功加工 {ok} 条")
