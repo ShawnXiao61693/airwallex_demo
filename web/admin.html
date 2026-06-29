@@ -16,7 +16,7 @@
     <div class="nav-label">内容</div>
     <div class="navitem on" data-p="p-strategy" onclick="nav(this)">⚙ 策略</div>
     <div class="navitem" data-p="p-daily" onclick="nav(this); loadReports()">▤ 日报审核</div>
-    <div class="navitem" data-p="p-weekly" onclick="nav(this)">▤ 周报审核</div>
+    <div class="navitem" data-p="p-weekly" onclick="nav(this); loadWeekly()">▤ 周报审核</div>
     <div class="navitem" data-p="p-monthly" onclick="nav(this)">▤ 月报审核</div>
     <div class="nav-label">运营</div>
     <div class="navitem" data-p="p-db" onclick="nav(this); loadDB()">▤ 情报库</div>
@@ -78,17 +78,14 @@
     <!-- 周报审核 -->
     <section id="p-weekly" class="panel">
       <h1>周报审核</h1>
-      <p class="desc">半自动：AI 生产初稿，周报编辑策展、把关。</p>
+      <p class="desc">周报为人工策展、脚本上传的成品；按周排期，发布日 = 当周周一。</p>
       <div class="card sched-card" onclick="openSched('周报')">
         <h4>⏰ 时间设置</h4>
         <div class="when"><span class="lab">审核时间：</span>每周五 15:00</div>
         <div class="when"><span class="lab">发出时间：</span>每周一 09:30</div>
         <div class="statusline">点击修改</div>
       </div>
-      <div style="margin-top:20px" class="draftrow">
-        <div><span class="pill draft">草稿</span>&nbsp; 周报 · 2026 第26周 <span class="muted" style="font-size:13px">（含 AI 播客 + 自测）</span></div>
-        <div style="display:flex;gap:8px"><a class="btn btn-ghost btn-sm" href="app.html">预览</a><button class="btn btn-grad btn-sm">确认发布</button></div>
-      </div>
+      <div style="margin-top:20px" id="weeklySlots"><div class="muted">加载中…</div></div>
     </section>
 
     <!-- 月报审核 -->
@@ -287,6 +284,34 @@ function renderDB(){
     '<td style="max-width:340px;font-size:12.5px;color:#33373E">'+esc(i.comment)+'</td>'+
     '</tr>').join('');
   document.querySelector('#dbTable tbody').innerHTML=rows||'<tr><td colspan="8" style="padding:18px;color:var(--muted)">该筛选下无数据</td></tr>';
+}
+
+// ===== 周报审核：按周 slots（来自 /api/slots），脚本上传后这里出现草稿 → 通过发布 =====
+const ST={empty:['待制作','draft'], draft:['草稿·待审核','draft'], published:['已发布','live']};
+async function loadWeekly(){
+  let slots;
+  try{ slots=(await (await fetch('/api/slots?type=weekly',{cache:'no-store'})).json()).slots; }
+  catch(e){ document.getElementById('weeklySlots').innerHTML='<div class="muted">加载失败：'+e+'（API 没起？）</div>'; return; }
+  const esc=s=>(s||'').toString().replace(/</g,'&lt;');
+  document.getElementById('weeklySlots').innerHTML = slots.map(s=>{
+    const [label,cls]=ST[s.state]||ST.empty;
+    const preview = s.url ? '<a class="btn btn-ghost btn-sm" href="'+s.url+'" target="_blank">预览</a>' : '';
+    const pub = s.state==='draft' ? '<button class="btn btn-grad btn-sm" onclick="publishWeekly(\''+s.period+'\',this)">通过发布</button>' : '';
+    return '<div class="draftrow">'+
+      '<div style="flex:1"><span class="pill '+cls+'">'+label+'</span>&nbsp; <b>周报 · '+s.period+' 当周</b>'+
+      (s.title?' <span class="muted" style="font-size:12px">'+esc(s.title)+'</span>':'')+
+      ' <span class="muted" style="font-size:12px">（发布日 '+s.period+'）</span></div>'+
+      '<div style="display:flex;gap:8px">'+preview+pub+'</div></div>';
+  }).join('');
+}
+async function publishWeekly(period,btn){
+  btn.disabled=true; btn.textContent='发布中…';
+  try{
+    const fd=new FormData(); fd.append('period',period); fd.append('type','weekly');
+    const r=await fetch('/api/publish',{method:'POST',body:fd});
+    if(!r.ok) throw new Error(r.status);
+    loadWeekly();
+  }catch(e){ btn.disabled=false; btn.textContent='通过发布'; alert('发布失败：'+e); }
 }
 </script>
 </body>

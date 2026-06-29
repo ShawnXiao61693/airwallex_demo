@@ -26,9 +26,43 @@ CREATE TABLE IF NOT EXISTS news (
 );
 """
 
+SCHEMA_PUB = """
+CREATE TABLE IF NOT EXISTS publications (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  period TEXT,                  -- 当周周一日期 YYYY-MM-DD，作为期数标识
+  type TEXT,                    -- weekly / monthly
+  title TEXT,
+  html_path TEXT,              -- nginx 下相对路径，如 data/weekly/2026-06-01.html
+  status TEXT DEFAULT 'draft',  -- draft / published
+  created_at TEXT, published_at TEXT,
+  UNIQUE(period, type)
+);
+"""
+
 def init_db():
     with conn() as c:
         c.execute(SCHEMA)
+        c.execute(SCHEMA_PUB)
+
+# ---- 周/月报出版物（手搓上传 → 审核发布）----
+def upsert_publication(period, typ, title, html_path):
+    with conn() as c:
+        c.execute(
+            """INSERT INTO publications (period,type,title,html_path,status,created_at)
+               VALUES (%s,%s,%s,%s,'draft',%s)
+               ON CONFLICT (period,type) DO UPDATE
+               SET title=EXCLUDED.title, html_path=EXCLUDED.html_path,
+                   status='draft', created_at=EXCLUDED.created_at, published_at=NULL""",
+            (period, typ, title, html_path, datetime.datetime.utcnow().isoformat()))
+
+def set_published(period, typ):
+    with conn() as c:
+        c.execute("UPDATE publications SET status='published', published_at=%s WHERE period=%s AND type=%s",
+                  (datetime.datetime.utcnow().isoformat(), period, typ))
+
+def list_publications(typ):
+    with conn() as c:
+        return c.execute("SELECT * FROM publications WHERE type=%s", (typ,)).fetchall()
 
 def upsert_raw(it):
     bucket = it.get('bucket_date') or datetime.date.today().isoformat()
