@@ -6,17 +6,30 @@ import os
 # 覆盖：竞品 + 跨境支付 + 出海 + 监管。可继续加。
 BRAVE_API_KEY = os.getenv('BRAVE_API_KEY', '')
 BRAVE_QUERIES = [
-    'Airwallex 空中云汇 最新',
+    # 我方生态（Airwallex 自己）
+    'Airwallex 空中云汇',
+    'Airwallex funding OR product OR license',
+    # 竞品
     'PingPong 跨境支付',
     'XTransfer 外贸 跨境',
-    '万里汇 WorldFirst 跨境',
-    '连连 跨境支付',
-    '跨境支付 出海 新规 监管',
+    '万里汇 WorldFirst',
+    '连连国际 跨境支付',
+    'Wise OR Stripe 跨境支付',
+    '蚂蚁国际 Antom 跨境',
+    # 监管 / 牌照 / 宏观
+    '跨境支付 牌照 监管 新规',
+    '稳定币 跨境 支付 牌照',
+    '人民币 汇率 外汇 政策',
+    # 目标行业 / 出海
     '跨境电商 政策 平台',
-    '稳定币 牌照 跨境',
+    '独立站 DTC 出海 收款',
+    '游戏出海 海外发行',
+    'TikTok Shop Temu SHEIN 卖家',
+    'B2B 外贸 数字化 支付',
+    'SaaS 出海 全球化',
     '企业出海 融资 新市场',
 ]
-BRAVE_COUNT = 10           # 每查询取多少条
+BRAVE_COUNT = 20           # 每查询取多少条
 BRAVE_FRESHNESS = 'pw'     # pd=近一天 / pw=近一周 / pm=近一月
 
 # ---- 情报分类法（喂给 Refiner）----
