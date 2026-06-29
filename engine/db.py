@@ -1,21 +1,23 @@
-# 数据层 —— 一张 news 表（status: raw→refined→irrelevant）。MVP 用 SQLite，量大再上 Postgres+pgvector。
-import sqlite3, json, datetime
-from config import DB_PATH
+# 数据层 —— Postgres（Supabase）。一张 news 表（status: raw→refined→irrelevant）。
+# 走 DATABASE_URL（Supabase pooler）；本质是标准 PG，将来要自托管换连接串即可。
+import os, json, datetime
+import psycopg
+from psycopg.rows import dict_row
+
+DB_URL = os.getenv('DATABASE_URL')
 
 def conn():
-    c = sqlite3.connect(DB_PATH)
-    c.row_factory = sqlite3.Row
-    return c
+    # 走 pgbouncer 事务池：autocommit + 关闭预编译，避免 "prepared statement" 冲突
+    return psycopg.connect(DB_URL, autocommit=True, prepare_threshold=None, row_factory=dict_row)
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS news (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  url TEXT UNIQUE,                 -- 去重靠它
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  url TEXT UNIQUE,
   title TEXT, source TEXT, source_country TEXT, lang TEXT,
   published_at TEXT, fetched_at TEXT, raw_content TEXT,
-  bucket_date TEXT,                -- 这条归属哪一天的日报（回填用）
-  status TEXT DEFAULT 'raw',       -- raw / refined / irrelevant
-  -- 以下由 Refiner 回填：
+  bucket_date TEXT,
+  status TEXT DEFAULT 'raw',
   relevant INTEGER,
   category TEXT, roles TEXT, industry TEXT, signal_type TEXT,
   s_rel REAL, s_time REAL, s_act REAL, s_cred REAL, s_total REAL,
@@ -26,30 +28,31 @@ CREATE TABLE IF NOT EXISTS news (
 
 def init_db():
     with conn() as c:
-        c.executescript(SCHEMA)
+        c.execute(SCHEMA)
 
 def upsert_raw(it):
     bucket = it.get('bucket_date') or datetime.date.today().isoformat()
     with conn() as c:
         c.execute(
-            """INSERT OR IGNORE INTO news
+            """INSERT INTO news
                (url,title,source,source_country,lang,published_at,fetched_at,raw_content,bucket_date,status)
-               VALUES (?,?,?,?,?,?,?,?,?,'raw')""",
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'raw')
+               ON CONFLICT (url) DO NOTHING""",
             (it['url'], it['title'], it.get('source'), it.get('country'), it.get('lang'),
              it.get('published_at'), datetime.datetime.utcnow().isoformat(),
              it.get('raw_content', it['title']), bucket))
 
 def get_unrefined(limit=5000):
     with conn() as c:
-        return c.execute("SELECT * FROM news WHERE status='raw' LIMIT ?", (limit,)).fetchall()
+        return c.execute("SELECT * FROM news WHERE status='raw' LIMIT %s", (limit,)).fetchall()
 
 def update_refined(news_id, r):
     status = 'refined' if r.get('relevant') else 'irrelevant'
     with conn() as c:
         c.execute(
-            """UPDATE news SET status=?, relevant=?, category=?, roles=?, industry=?, signal_type=?,
-               s_rel=?, s_time=?, s_act=?, s_cred=?, s_total=?, comment=?, action=?, products=?, citation=?, refined_at=?
-               WHERE id=?""",
+            """UPDATE news SET status=%s, relevant=%s, category=%s, roles=%s, industry=%s, signal_type=%s,
+               s_rel=%s, s_time=%s, s_act=%s, s_cred=%s, s_total=%s, comment=%s, action=%s, products=%s, citation=%s, refined_at=%s
+               WHERE id=%s""",
             (status, 1 if r.get('relevant') else 0,
              json.dumps(r.get('category', []), ensure_ascii=False),
              json.dumps(r.get('roles', []), ensure_ascii=False),
@@ -63,19 +66,20 @@ def update_refined(news_id, r):
 def get_for_daily(role, top_n):
     with conn() as c:
         return c.execute(
-            """SELECT * FROM news WHERE status='refined' AND relevant=1 AND roles LIKE ?
-               ORDER BY s_total DESC LIMIT ?""",
+            """SELECT * FROM news WHERE status='refined' AND relevant=1 AND roles LIKE %s
+               ORDER BY s_total DESC LIMIT %s""",
             (f'%"{role}"%', top_n)).fetchall()
 
 # ---- 按天回填用 ----
 def list_bucket_dates():
     with conn() as c:
-        return [r[0] for r in c.execute(
-            "SELECT DISTINCT bucket_date FROM news WHERE status='refined' AND relevant=1 ORDER BY bucket_date").fetchall()]
+        rows = c.execute(
+            "SELECT DISTINCT bucket_date FROM news WHERE status='refined' AND relevant=1 ORDER BY bucket_date").fetchall()
+        return [r['bucket_date'] for r in rows]
 
 def get_candidates(bucket_date, role, limit=40):
     with conn() as c:
         return c.execute(
             """SELECT * FROM news WHERE status='refined' AND relevant=1
-               AND bucket_date=? AND roles LIKE ? ORDER BY s_total DESC LIMIT ?""",
+               AND bucket_date=%s AND roles LIKE %s ORDER BY s_total DESC LIMIT %s""",
             (bucket_date, f'%"{role}"%', limit)).fetchall()
