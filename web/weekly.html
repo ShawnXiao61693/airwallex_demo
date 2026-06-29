@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>周报 · 2026 第26周 · Airwallex 销售情报</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+/* ===== 周报 · 杂志翻页（复用全局设计 token） ===== */
+body.app-bg{display:flex;flex-direction:column;min-height:100vh}
+
+/* 进度条 */
+.wk-progress{height:3px;background:var(--line)}
+.wk-progress .bar{height:100%;background:var(--grad);width:20%;transition:width .35s ease}
+
+/* 书本容器 */
+.book{flex:1;max-width:var(--maxw);width:100%;margin:0 auto;padding:0 24px}
+.page{display:none;animation:pgIn .4s ease}
+.page.on{display:block}
+@keyframes pgIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* 每页页眉 */
+.page-head{display:flex;align-items:center;gap:14px;padding:26px 0 6px}
+.page-head .pgno{font-family:var(--mono);font-size:13px;font-weight:600;color:#fff;background:var(--grad);
+  width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center}
+.page-head .pgtheme{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.page-head .pgtheme b{display:block;font-family:var(--font);font-size:19px;letter-spacing:-.02em;color:var(--ink);text-transform:none;margin-top:2px}
+.page-rule{height:1px;background:var(--line);margin:14px 0 22px}
+
+/* ---------- P1 封面 ---------- */
+.cover-eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);font-weight:600}
+.cover h1{font-size:clamp(34px,5.2vw,56px);font-weight:800;margin:14px 0 0;letter-spacing:-.02em}
+.cover .lead{font-size:18px;color:#33373E;max-width:60ch;margin-top:18px}
+.cover-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin:28px 0}
+.cstat{padding:18px 20px}
+.cstat .n{font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.cstat .n.grad{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.cstat .l{font-size:12.5px;color:var(--muted);margin-top:8px}
+.wk-force{display:inline-flex;align-items:center;gap:8px;background:var(--grad-soft);border:1px solid #E2DAFF;
+  border-radius:999px;padding:9px 16px;font-size:13px;color:#4A1FCC;font-weight:600}
+
+/* 目录 */
+.toc{padding:8px 0}
+.toc-item{display:flex;align-items:center;gap:16px;padding:16px 4px;border-bottom:1px solid var(--line);cursor:pointer;transition:.15s}
+.toc-item:hover{padding-left:12px;background:var(--paper)}
+.toc-item:last-child{border-bottom:0}
+.toc-item .tn{font-family:var(--mono);font-size:13px;color:var(--orange);font-weight:600;width:26px}
+.toc-item .tt{flex:1}
+.toc-item .tt b{font-size:16px;display:block}
+.toc-item .tt span{font-size:13px;color:var(--muted)}
+.toc-item .go{font-family:var(--mono);font-size:18px;color:var(--muted-2)}
+
+/* 导读 callout */
+.lead-box{padding:20px 24px;background:var(--grad-soft);border-color:#E2DAFF;margin:6px 0 26px}
+
+/* 播客 / 视频 */
+.media-row{display:grid;grid-template-columns:1.6fr 1fr;gap:16px;margin-bottom:8px}
+.podcast{padding:24px;background:linear-gradient(160deg,#1A1D21 0%,#2A2140 100%);color:#fff;border:0;position:relative;overflow:hidden}
+.podcast::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:var(--grad);opacity:.25;filter:blur(20px)}
+.podcast .eyebrow{color:#B9BDC6}
+.podcast h3{font-size:20px;margin:10px 0 6px;color:#fff}
+.podcast .dur{font-family:var(--mono);font-size:12px;color:#9AA0AA}
+.player{display:flex;align-items:center;gap:14px;margin:18px 0 8px;position:relative;z-index:1}
+.play-btn{width:52px;height:52px;border-radius:50%;background:var(--grad);border:0;color:#fff;font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wave{flex:1;height:34px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.32) 0 3px,transparent 3px 7px);border-radius:6px;opacity:.6}
+.chapters{list-style:none;padding:0;margin:14px 0 0;position:relative;z-index:1}
+.chapters li{display:flex;justify-content:space-between;font-size:13px;color:#C7CAD1;padding:7px 0;border-top:1px solid rgba(255,255,255,.08)}
+.chapters li span:last-child{font-family:var(--mono);color:#9AA0AA}
+.placeholder-tag{display:inline-block;font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+  background:rgba(255,255,255,.12);color:#E8E8ED;padding:3px 8px;border-radius:6px;margin-top:14px;position:relative;z-index:1}
+.video-ph{padding:0;overflow:hidden;display:flex;flex-direction:column}
+.video-frame{flex:1;min-height:150px;background:var(--grad-soft);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--line)}
+.video-frame .vbtn{width:54px;height:54px;border-radius:50%;background:#fff;box-shadow:var(--shadow);display:flex;align-items:center;justify-content:center;color:var(--violet);font-size:18px}
+.video-ph .vcap{padding:16px 18px}
+.video-ph h4{font-size:15px;margin-bottom:4px}
+.video-ph p{font-size:12.5px;color:var(--muted);margin:0}
+
+/* ---------- 选题正文通用 ---------- */
+.topic-title{font-size:clamp(24px,3.4vw,32px);font-weight:800;letter-spacing:-.02em;margin:4px 0 10px}
+.topic-why{font-size:15px;color:#33373E;max-width:68ch;margin-bottom:8px}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.block-label{font-family:var(--mono);font-size:11px;letter-spacing:.08em;color:var(--violet);text-transform:uppercase;margin:24px 0 10px;font-weight:600}
+.block-label.red{color:#C7491C}
+
+/* 何时使用 / 提示框 */
+.cue{display:flex;gap:12px;align-items:flex-start;padding:14px 18px;border:1px solid var(--line);border-radius:var(--radius-sm);background:var(--paper);font-size:14px}
+.cue .ic{font-size:18px;line-height:1.3}
+
+/* battle card 表 */
+.bcard{width:100%;border-collapse:collapse;font-size:14px;margin-top:4px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.bcard th,.bcard td{text-align:left;padding:13px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+.bcard thead th{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:600;background:var(--paper)}
+.bcard thead th.uscol{color:#137A50}
+.bcard .us{color:#137A50;font-weight:600}
+.bcard .dim{font-weight:600;color:var(--ink);width:24%}
+.bcard tbody tr:last-child td{border-bottom:0}
+
+/* 话术框 */
+.script{white-space:pre-wrap;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius-sm);
+  padding:16px 18px;font-size:14px;line-height:1.75;color:#2A2E35}
+.copy-row{display:flex;justify-content:flex-end;margin-top:12px}
+
+/* Q&A 追问 */
+.qna{border:1px solid var(--line);border-radius:var(--radius-sm);overflow:hidden}
+.qna .qa{padding:14px 18px;border-bottom:1px solid var(--line)}
+.qna .qa:last-child{border-bottom:0}
+.qna .qq{font-weight:600;font-size:14.5px;margin-bottom:6px}
+.qna .qq::before{content:"客户问 · ";font-family:var(--mono);font-size:11px;color:var(--orange);font-weight:600}
+.qna .aa{font-size:14px;color:#33373E}
+.qna .aa::before{content:"你答 · ";font-family:var(--mono);font-size:11px;color:var(--violet);font-weight:600}
+
+/* 异议：场景 + 接法列表 */
+.objection{background:var(--grad-soft);border-radius:var(--radius-sm);padding:14px 18px;font-size:15px;border:1px solid #E2DAFF}
+.objection b{color:#C7491C}
+.reply-list{list-style:none;padding:0;margin:0}
+.reply-list li{padding:14px 0;border-bottom:1px solid var(--line)}
+.reply-list li:last-child{border-bottom:0}
+.reply-list .say{font-weight:600;font-size:14.5px;margin-bottom:5px}
+.reply-list .say::before{content:"“";color:var(--muted-2)}
+.reply-list .say::after{content:"”";color:var(--muted-2)}
+.reply-list .rep{font-size:14px;color:#33373E}
+.reply-list .rep::before{content:"→ ";color:var(--violet);font-weight:700}
+.dontbox{border:1px dashed #E0B4A6;background:rgba(224,86,59,.05);border-radius:var(--radius-sm);padding:14px 18px;font-size:14px;color:#33373E}
+.dontbox b{color:#C7491C}
+
+/* 行动清单 */
+.checklist{list-style:none;padding:0;margin:0}
+.checklist li{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.checklist li:last-child{border-bottom:0}
+.checklist .ck{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--violet);flex-shrink:0;margin-top:2px;
+  display:flex;align-items:center;justify-content:center;color:var(--violet);font-size:12px}
+.timehint{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:#C7491C;background:rgba(255,112,63,.10);
+  border-radius:999px;padding:8px 14px;font-weight:600;margin-top:6px}
+
+/* ---------- P5 自测 ---------- */
+.quiz .q{margin-bottom:24px}
+.quiz .qtext{font-weight:600;font-size:15.5px;margin-bottom:12px}
+.quiz .qtext .qn{font-family:var(--mono);color:var(--orange);margin-right:8px}
+.opt{display:block;border:1px solid var(--line);border-radius:var(--radius-sm);padding:12px 16px;margin-bottom:9px;cursor:pointer;font-size:14.5px;transition:.15s;background:#fff}
+.opt:hover{border-color:var(--violet)}
+.opt.sel{border-color:var(--violet);background:var(--grad-soft)}
+.opt.correct{border-color:var(--ok);background:rgba(31,169,113,.10)}
+.opt.wrong{border-color:#E0563B;background:rgba(224,86,59,.08)}
+.opt.locked{cursor:default}
+.quiz-foot{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-top:8px}
+.score{font-family:var(--mono);font-size:13px;color:var(--muted)}
+.score b{color:var(--ink);font-size:16px}
+
+/* 排行榜 */
+.lb{width:100%;border-collapse:collapse;font-size:14px}
+.lb th,.lb td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line)}
+.lb th{font-family:var(--mono);font-size:11px;color:var(--muted);font-weight:600}
+.lb .rk{font-family:var(--mono);font-weight:700;color:var(--muted)}
+.lb tr.me{background:var(--grad-soft)}
+.lb tr.me td{font-weight:600}
+.lb .pts{font-family:var(--mono);text-align:right;color:var(--ink)}
+.badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.badges .b{font-size:12.5px;background:#F1F1F4;border-radius:999px;padding:7px 13px;color:#33373E}
+.badges .b.lock{opacity:.5}
+
+/* ---------- 翻页底栏 ---------- */
+.flip{position:sticky;bottom:0;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-top:1px solid var(--line);
+  margin-top:34px}
+.flip-in{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.flip .nav{min-width:120px}
+.flip .nav:disabled{opacity:.35;cursor:default;transform:none}
+.dots{display:flex;gap:10px;align-items:center}
+.dot{display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer}
+.dot .d{width:9px;height:9px;border-radius:50%;background:var(--line);transition:.2s}
+.dot .lbl{font-family:var(--mono);font-size:10px;color:var(--muted-2);white-space:nowrap}
+.dot.on .d{background:var(--grad);transform:scale(1.25)}
+.dot.on .lbl{color:var(--ink)}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:88px;transform:translateX(-50%) translateY(20px);background:var(--shark);color:#fff;
+  padding:12px 20px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:80;box-shadow:var(--shadow)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media (max-width:860px){
+  .media-row{grid-template-columns:1fr}
+  .cover-stats{grid-template-columns:1fr 1fr}
+  .dot .lbl{display:none}
+}
+</style>
+</head>
+<body class="app-bg">
+
+<header class="pagehead">
+  <div class="wrap row">
+    <div class="wordmark"><span class="dot"></span>销售情报 · 周报</div>
+    <div style="display:flex;gap:18px;align-items:center">
+      <a class="back" href="app.html">日报</a>
+      <a class="back" href="index.html">← 返回首页</a>
+    </div>
+  </div>
+</header>
+
+<div class="wk-progress"><div class="bar" id="bar"></div></div>
+
+<div class="book">
+
+  <!-- ============ P1 · 封面 ============ -->
+  <section class="page on" id="p1">
+    <div style="padding:30px 0 4px">
+      <div class="cover-eyebrow">周报 · 2026 第 26 周 · 6/22 – 6/28</div>
+      <h1 class="cover">本周三件最值得练的事</h1>
+      <p class="lead">日报让你<b>知道</b>发生了什么；周报让你<b>会用</b>它。本周从 41 条原始情报里，
+        RE 策展挑出 3 件最值得教的，转化成可以直接复制进客户对话的弹药。</p>
+    </div>
+
+    <div class="cover-stats">
+      <div class="card cstat"><div class="n grad">41</div><div class="l">本周原始情报</div></div>
+      <div class="card cstat"><div class="n grad">3</div><div class="l">炼成可用弹药</div></div>
+      <div class="card cstat"><div class="n grad">8′</div><div class="l">预计学习时长</div></div>
+      <div class="card cstat"><div class="n grad">60</div><div class="l">完成可得积分</div></div>
+    </div>
+
+    <div class="card lead-box">
+      <div class="eyebrow" style="color:#4A1FCC">本周导读</div>
+      <p style="margin:8px 0 0;font-size:15px;color:#2A2E35">
+        竞争在加速：<b>XTransfer 递表冲 IPO</b>、<b>万里汇打出 0.3% 封顶价格战</b>——都在逼我们回答同一个问题：
+        当客户只盯费率，怎么把话题拉回"全链路价值"？同时 <b>SHEIN 开放韩国站</b>又开了一扇新的获客窗口。
+        本周弹药就围绕"<b>守住存量、撬动新客</b>"打磨。</p>
+    </div>
+
+    <div class="block-label">本周对谈 · 通勤路上听 / 看</div>
+    <div class="media-row">
+      <div class="card podcast">
+        <div class="eyebrow">AI 播客 · 多人对谈</div>
+        <h3>「费率战来了，我们怎么接？」</h3>
+        <div class="dur">主持人 × 资深 AE × 行业分析 · 约 12 分钟</div>
+        <div class="player">
+          <button class="play-btn" onclick="toast('占位演示：生产环境为 NotebookLM 式多人对谈音频')">▶</button>
+          <div class="wave"></div>
+        </div>
+        <ul class="chapters">
+          <li><span>① XTransfer IPO 意味着什么</span><span>00:00</span></li>
+          <li><span>② 客户拿费率压价怎么破</span><span>04:10</span></li>
+          <li><span>③ SHEIN 韩国站怎么切入</span><span>08:30</span></li>
+        </ul>
+        <span class="placeholder-tag">⚙ 占位 · 音频由引擎自动生成，此处仅示意形态</span>
+      </div>
+      <div class="card video-ph">
+        <div class="video-frame"><div class="vbtn">▶</div></div>
+        <div class="vcap">
+          <h4>90 秒速览（短视频）</h4>
+          <p>三件事可视化摘要，适合发团队群快速对齐。<br><span class="placeholder-tag" style="background:#F1F1F4;color:var(--muted)">⚙ 占位</span></p>
+        </div>
+      </div>
+    </div>
+
+    <div class="block-label">本期目录</div>
+    <div class="card toc" style="padding:6px 22px">
+      <div class="toc-item" onclick="go(2)"><span class="tn">01</span><span class="tt"><b>竞品 Battle Card</b><span>XTransfer 递表 IPO · 全链路 vs 单一收付</span></span><span class="go">→</span></div>
+      <div class="toc-item" onclick="go(3)"><span class="tn">02</span><span class="tt"><b>异议处理范例</b><span>万里汇费率战 · 客户拿费率压价怎么接</span></span><span class="go">→</span></div>
+      <div class="toc-item" onclick="go(4)"><span class="tn">03</span><span class="tt"><b>新窗口 · 开场话术</b><span>SHEIN 韩国站开放 · KRW 回款新窗口</span></span><span class="go">→</span></div>
+      <div class="toc-item" onclick="go(5)"><span class="tn">04</span><span class="tt"><b>本周自测 + 学习榜</b><span>3 道题 · 完成拿满 60 积分</span></span><span class="go">→</span></div>
+    </div>
+
+    <div style="margin:24px 0 8px"><span class="wk-force">⚡ 本周任务：读完 + 完成自测，即可拿满本周学习积分</span></div>
+  </section>
+
+  <!-- ============ P2 · 竞品对决 ============ -->
+  <section class="page" id="p2">
+    <div class="page-head"><span class="pgno">01</span><span class="pgtheme">Battle Card<b>竞品对决</b></span></div>
+    <div class="page-rule"></div>
+
+    <div class="chiprow">
+      <span class="chip cat-竞品">竞品</span>
+      <span class="chip">触发：XTransfer 递表港交所</span>
+      <span class="chip">适用：B2B 外贸客户</span>
+    </div>
+    <h2 class="topic-title">当客户在比 XTransfer：用"全链路"对"单一收付"</h2>
+    <p class="topic-why">XTransfer 递表冲刺 IPO（估值约 30 亿美元），会更激进地抢 B2B 外贸客户。它强在 B2B 收付 + 风控，但产品相对单一——这正是我们做差异化的缺口。</p>
+
+    <div class="cue"><span class="ic">🎯</span><div><b>什么时候掏出这张卡：</b>客户提到"在用 XTransfer / 在比 XTransfer"，或客户业务正从单纯收款向多市场、付款、投流扩张时。</div></div>
+
+    <div class="block-label">对比卡</div>
+    <table class="bcard">
+      <thead><tr><th class="dim">维度</th><th class="uscol">Airwallex</th><th>XTransfer</th></tr></thead>
+      <tbody>
+        <tr><td class="dim">核心能力</td><td class="us">收·管·付全链路 + 发卡 + 收单</td><td>B2B 收付 + 风控为主</td></tr>
+        <tr><td class="dim">资金可用范围</td><td class="us">多币种账户、全球付款、企业卡投流一体</td><td>偏收款回款，链路较短</td></tr>
+        <tr><td class="dim">适配场景</td><td class="us">电商 / SaaS / 平台 / 外贸通吃</td><td>B2B 外贸为主</td></tr>
+        <tr><td class="dim">客户成长性</td><td class="us">随业务扩张持续加购（卡 / 收单 / 付款）</td><td>功能到顶后扩展空间有限</td></tr>
+        <tr><td class="dim">一句话</td><td class="us">一条完整的资金链路</td><td>一个好用的收款工具</td></tr>
+      </tbody>
+    </table>
+
+    <div class="block-label">一句话定调（背给客户听）</div>
+    <div class="script" id="s1">XTransfer 在 B2B 收付这一段做得不错，如果您只需要"把钱收回来"，它够用。但您的业务在往多市场、多币种、要投广告、要发卡的方向走——这时候需要的是一条完整的资金链路，而不是一个收款工具。Airwallex 是把"收、管、付 + 企业卡 + 收单"放在一个账户里，您扩到哪，它跟到哪。</div>
+    <div class="copy-row"><button class="btn btn-grad btn-sm" onclick="copy('s1')">复制定调话术</button></div>
+
+    <div class="block-label">客户可能追问</div>
+    <div class="card qna">
+      <div class="qa"><div class="qq">XTransfer 要上市了，是不是更稳更靠谱？</div><div class="aa">上市说明 B2B 收付这块被验证了，是好事。但上市公司有营收增长压力，往往更激进地涨价、抢量；而您要的是长期能跟着业务一起扩的伙伴，不是被 KPI 推着走的供应商。</div></div>
+      <div class="qa"><div class="qq">我们就是纯外贸收款，要那么多功能干嘛？</div><div class="aa">现在用不到不代表明年用不到——一旦要给海外供应商付款、要用卡投广告、要做多币种，再换系统的迁移成本很高。先用一个能长大的账户，比之后推倒重来省事。</div></div>
+    </div>
+  </section>
+
+  <!-- ============ P3 · 异议处理 ============ -->
+  <section class="page" id="p3">
+    <div class="page-head"><span class="pgno">02</span><span class="pgtheme">Objection Handling<b>异议处理</b></span></div>
+    <div class="page-rule"></div>
+
+    <div class="chiprow">
+      <span class="chip cat-竞品">竞品</span>
+      <span class="chip">触发：万里汇 0.3% 封顶价格战</span>
+      <span class="chip">技能：换框 · 算总账</span>
+    </div>
+    <h2 class="topic-title">客户拿"万里汇更便宜"压价时，怎么接</h2>
+    <p class="topic-why">万里汇（蚂蚁系）披露商家展业同比 +56%，主打"提现 0.3% 封顶、最快 1 分钟到账"。纯比费率我们不占优——这道题的正确解法是<b>把战场从"价格"换到"价值"</b>。</p>
+
+    <div class="block-label red">客户会这么说</div>
+    <div class="objection">💬 <b>"万里汇提现 0.3% 封顶，比你们便宜，我为什么选 Airwallex？"</b></div>
+
+    <div class="block-label red">禁区</div>
+    <div class="dontbox">❌ <b>不要立刻对标报一个更低的费率。</b>一旦进入费率对比，你就把自己降级成"另一个收款通道"，利润被压没，还丢了价值叙事的主动权。</div>
+
+    <div class="block-label">标准话术（三步：认同 → 换框 → 算总账）</div>
+    <div class="script" id="s2">① 认同：万里汇在"收款提现"这一项上费率确实有竞争力，这点我不绕。
+
+② 换框：不过先问您一句——您每个月除了"把钱收回来"，是不是还要换汇、给海外供应商付款、用卡投广告？这些万里汇要么做不了、要么得再接别的工具。每多接一个工具，就是多一份对账、多一道资金时滞、多一处合规风险。
+
+③ 算总账：Airwallex 把收、换、付、卡放在一个账户里。您省下的不只是某一笔的费率，而是整条资金链路的隐性成本——汇损、时间、对账人力。我帮您按真实月流水算一笔总账，咱们比的是"一年下来到手多少"，不是单笔费率。</div>
+    <div class="copy-row"><button class="btn btn-grad btn-sm" onclick="copy('s2')">复制异议话术</button></div>
+
+    <div class="block-label">其他常见压价说法 · 一句话接法</div>
+    <ul class="reply-list card" style="padding:6px 20px">
+      <li><div class="say">PingPong 给我返点，你们能返吗？</div><div class="rep">返点是一次性的，链路能力是长期的——我帮您把全年综合成本和返点放一起比，您看哪个更划算。</div></li>
+      <li><div class="say">连连费率更低，你们贵。</div><div class="rep">单看收款是会贵一点点，但您还要付款、换汇、发卡——把这些加进来，多工具的隐性成本通常比那点费率差高得多。</div></li>
+      <li><div class="say">我现在用着挺好，没必要换。</div><div class="rep">完全理解，不用现在换。先做个并行小账户跑一笔真实交易，您自己对比到手金额和体验，再决定也不迟。</div></li>
+    </ul>
+  </section>
+
+  <!-- ============ P4 · 新窗口获客 ============ -->
+  <section class="page" id="p4">
+    <div class="page-head"><span class="pgno">03</span><span class="pgtheme">New Window<b>新窗口获客</b></span></div>
+    <div class="page-rule"></div>
+
+    <div class="chiprow">
+      <span class="chip cat-行业">行业</span>
+      <span class="chip">触发：SHEIN 开放韩国站第三方入驻</span>
+      <span class="chip">⏳ 有时效</span>
+    </div>
+    <h2 class="topic-title">SHEIN 韩国站开放 = 一批要 KRW 回款的新卖家</h2>
+    <p class="topic-why">SHEIN 正式开放韩国站第三方卖家入驻，会带来一批涌入韩国市场的中国卖家——他们立刻面临韩元（KRW）收款与本地结算的问题。这是一个有保鲜期的获客窗口，本周就该出手。</p>
+
+    <span class="timehint">⏳ 时效弹药：开站初期最容易切入，建议本周内完成首轮触达</span>
+
+    <div class="block-label">该打给谁 · 目标信号清单</div>
+    <ul class="checklist card" style="padding:6px 22px">
+      <li><span class="ck">✓</span><div>已在做、或明确表态要上 <b>SHEIN 韩国站</b>的电商卖家</div></li>
+      <li><span class="ck">✓</span><div>已有韩国市场业务、但回款走第三方绕路的存量客户</div></li>
+      <li><span class="ck">✓</span><div>主营服饰 / 快时尚、客单价低、对汇损敏感的卖家</div></li>
+      <li><span class="ck">✓</span><div>近期在 BOSS / 行业群提过"韩国""KRW""韩元结算"的线索</div></li>
+    </ul>
+
+    <div class="block-label">电话 / 微信开场</div>
+    <div class="script" id="s3">看到 SHEIN 刚开放韩国站第三方入驻，您这边如果有计划上、或已经在做韩国市场，有件事可能正好用得上——韩元（KRW）的本地收款和结算。很多卖家上了韩国站才发现回款绕一圈、汇损不小。Airwallex 有韩国本地收款账户，KRW 直接落地、再按需换汇，能省掉中间这道损耗。要不要我给您 15 分钟，把韩国站的回款路径帮您捋一遍？</div>
+    <div class="copy-row"><button class="btn btn-ghost btn-sm" onclick="copy('s3')">复制开场话术</button></div>
+
+    <div class="block-label">触达邮件模板</div>
+    <div class="script" id="s4">主题：SHEIN 韩国站开放后，您的 KRW 回款准备好了吗
+
+王总，您好：
+
+注意到 SHEIN 本周正式开放了韩国站第三方卖家入驻。如果贵司在布局韩国市场，回款环节通常是第一个卡点——韩元结算、本地清算、汇损控制。
+
+Airwallex 提供韩国本地收款账户，支持 KRW 直接收款与按需换汇，帮您把"在韩国赚的钱"以更低损耗拿回来。
+
+方便的话，下周约 15 分钟，我把适合贵司的韩国站回款方案和报价给您过一遍。
+
+顺祝商祺</div>
+    <div class="copy-row"><button class="btn btn-grad btn-sm" onclick="copy('s4')">复制邮件模板</button></div>
+  </section>
+
+  <!-- ============ P5 · 自测 + 学习榜 ============ -->
+  <section class="page" id="p5">
+    <div class="page-head"><span class="pgno">04</span><span class="pgtheme">Quiz & Leaderboard<b>本周自测 + 学习榜</b></span></div>
+    <div class="page-rule"></div>
+
+    <div class="card quiz" id="quiz" style="padding:28px">
+      <p class="muted" style="margin-top:0;font-size:13.5px">3 道题，对应前面三件事。读过就能答对——这一步是为了让你真的把弹药记住。</p>
+
+      <div class="q" data-correct="b">
+        <div class="qtext"><span class="qn">Q1</span>面对在比 XTransfer 的 B2B 客户，我们的主打差异点是？</div>
+        <div class="opt" data-k="a">报一个比 XTransfer 更低的费率</div>
+        <div class="opt" data-k="b">用"收管付全链路 + 卡 + 收单"对它的"单一收付"</div>
+        <div class="opt" data-k="c">强调我们比它更早成立</div>
+      </div>
+      <div class="q" data-correct="c">
+        <div class="qtext"><span class="qn">Q2</span>客户拿万里汇 0.3% 费率压价，最不该做的是？</div>
+        <div class="opt" data-k="a">先认同它在收款提现上的费率优势</div>
+        <div class="opt" data-k="b">把话题换框到换汇、付款、企业卡的综合需求</div>
+        <div class="opt" data-k="c">立刻对标报一个更低的费率</div>
+      </div>
+      <div class="q" data-correct="a">
+        <div class="qtext"><span class="qn">Q3</span>SHEIN 韩国站开放，最对的切入角度是？</div>
+        <div class="opt" data-k="a">韩元（KRW）本地收款与结算，降低回款汇损</div>
+        <div class="opt" data-k="b">帮客户做韩国站的店铺装修</div>
+        <div class="opt" data-k="c">推荐客户改做欧美市场</div>
+      </div>
+
+      <div class="quiz-foot">
+        <div class="score" id="score">未提交</div>
+        <button class="btn btn-grad" id="submitBtn" onclick="grade()">提交答案</button>
+      </div>
+    </div>
+
+    <div class="block-label">本周学习榜</div>
+    <div class="card" style="padding:8px 22px">
+      <table class="lb">
+        <thead><tr><th style="width:50px">名次</th><th>姓名</th><th>角色</th><th style="text-align:right">本周积分</th></tr></thead>
+        <tbody>
+          <tr><td class="rk">🥇 1</td><td>王五</td><td>AE · 拓新</td><td class="pts">60</td></tr>
+          <tr><td class="rk">🥈 2</td><td>李四</td><td>AM · 客户成功</td><td class="pts">60</td></tr>
+          <tr><td class="rk">🥉 3</td><td>赵六</td><td>AM · 客户成功</td><td class="pts">40</td></tr>
+          <tr class="me"><td class="rk">4</td><td>张三（你）</td><td>AE · 拓新</td><td class="pts" id="myPts">0</td></tr>
+        </tbody>
+      </table>
+      <div class="badges">
+        <span class="b">🏅 连续学习 3 周</span>
+        <span class="b">📈 团队排名 #4</span>
+        <span class="b lock">🔒 本月之星（月报揭晓）</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- 翻页底栏 -->
+<div class="flip">
+  <div class="flip-in">
+    <button class="btn btn-ghost nav" id="prev" onclick="go(cur-1)">← 上一页</button>
+    <div class="dots" id="dots"></div>
+    <button class="btn btn-grad nav" id="next" onclick="go(cur+1)">下一页 →</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---- 翻页 ---- */
+const PAGES=[
+  {id:'p1',lbl:'封面'},
+  {id:'p2',lbl:'竞品'},
+  {id:'p3',lbl:'异议'},
+  {id:'p4',lbl:'新窗口'},
+  {id:'p5',lbl:'自测'}
+];
+let cur=1;
+const dotsEl=document.getElementById('dots');
+dotsEl.innerHTML=PAGES.map((p,i)=>`<div class="dot" onclick="go(${i+1})"><span class="d"></span><span class="lbl">${p.lbl}</span></div>`).join('');
+function go(n){
+  if(n<1||n>PAGES.length)return;
+  cur=n;
+  PAGES.forEach((p,i)=>document.getElementById(p.id).classList.toggle('on',i+1===n));
+  dotsEl.querySelectorAll('.dot').forEach((d,i)=>d.classList.toggle('on',i+1===n));
+  document.getElementById('prev').disabled=(n===1);
+  document.getElementById('next').disabled=(n===PAGES.length);
+  document.getElementById('bar').style.width=(n/PAGES.length*100)+'%';
+  document.getElementById('next').textContent = n===PAGES.length ? '已读完 ✓' : '下一页 →';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight')go(cur+1);
+  if(e.key==='ArrowLeft')go(cur-1);
+});
+go(1);
+
+/* ---- 复制 ---- */
+function copy(id){
+  const t=document.getElementById(id).innerText;
+  navigator.clipboard?.writeText(t).then(()=>toast('已复制，可直接粘进对话')).catch(()=>toast('已复制'));
+}
+/* ---- toast ---- */
+let tt;
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(tt);tt=setTimeout(()=>el.classList.remove('show'),2200);
+}
+/* ---- 自测 ---- */
+document.querySelectorAll('#quiz .q').forEach(q=>{
+  q.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+    if(q.classList.contains('done'))return;
+    q.querySelectorAll('.opt').forEach(x=>x.classList.remove('sel'));
+    o.classList.add('sel');
+  }));
+});
+function grade(){
+  const qs=document.querySelectorAll('#quiz .q');
+  let right=0, answered=0;
+  qs.forEach(q=>{const sel=q.querySelector('.opt.sel');if(sel)answered++;});
+  if(answered<qs.length){toast('先把 '+qs.length+' 道都选上再提交');return;}
+  qs.forEach(q=>{
+    const sel=q.querySelector('.opt.sel'), correct=q.dataset.correct;
+    q.classList.add('done');
+    q.querySelectorAll('.opt').forEach(o=>{
+      o.classList.add('locked');
+      if(o.dataset.k===correct)o.classList.add('correct');
+      else if(o.classList.contains('sel'))o.classList.add('wrong');
+    });
+    if(sel&&sel.dataset.k===correct)right++;
+  });
+  const pts=right*20;
+  document.getElementById('score').innerHTML='答对 <b>'+right+' / '+qs.length+'</b>';
+  document.getElementById('myPts').textContent=pts;
+  document.getElementById('submitBtn').disabled=true;
+  document.getElementById('submitBtn').textContent='已提交';
+  toast(right===qs.length?'满分！+'+pts+' 积分已到账 🎉':'+'+pts+' 积分已到账，错题已标出');
+}
+</script>
+</body>
+</html>
