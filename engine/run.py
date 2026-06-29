@@ -3,7 +3,7 @@ import db, collect, refine, compose
 
 if __name__ == '__main__':
     db.init_db()
-    collect.collect()   # GDELT → news(raw)
+    collect.collect()   # Brave → news(raw)
     refine.refine()     # LLM 打标评分 → news(refined)
     compose.compose()   # 出 daily_AE.json / daily_AM.json
     print("✅ 完成：daily_AE.json / daily_AM.json")

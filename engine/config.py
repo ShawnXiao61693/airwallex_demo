@@ -1,10 +1,9 @@
 # 引擎配置 —— 数据源、分类法、LLM、阈值
 import os
 
-# ---- 数据源：GDELT 查询（关键词）。免费、免部署、免 key ----
-# 覆盖：竞品 + 跨境支付 + 出海 + 监管。可继续加。
 # ---- 数据源：Brave Search API（新闻搜索）----
-# 比 GDELT 更相关、支持中文查询、结果自带摘要(description)，refine 上下文更足。
+# 支持中文查询、结果自带摘要(description)，refine 上下文更足。
+# 覆盖：竞品 + 跨境支付 + 出海 + 监管。可继续加。
 BRAVE_API_KEY = os.getenv('BRAVE_API_KEY', '')
 BRAVE_QUERIES = [
     'Airwallex 空中云汇 最新',

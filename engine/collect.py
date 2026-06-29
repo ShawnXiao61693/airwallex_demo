@@ -1,5 +1,5 @@
 # Collector（采集 · Engine）—— 用 Brave Search API 拉真实新闻 → 归一化 → 入库(raw)
-# Brave 比 GDELT 更相关、支持中文、结果自带摘要(description)，喂给 Refiner 上下文更足。
+# Brave 支持中文、结果自带摘要(description)，喂给 Refiner 上下文更足。
 import requests, time
 from config import BRAVE_API_KEY, BRAVE_QUERIES, BRAVE_COUNT, BRAVE_FRESHNESS
 import db

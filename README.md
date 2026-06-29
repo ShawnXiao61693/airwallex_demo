@@ -31,7 +31,7 @@ cd web && python3 -m http.server 8000
 
 ```mermaid
 flowchart TB
-  S["数据源<br/>RSSHub·DailyHotApi·GDELT·we-mp-rss·Crawl4AI·Tavily/Exa"]
+  S["数据源<br/>Brave Search API（新闻）"]
 
   subgraph PIPE["主链路"]
     direction LR
