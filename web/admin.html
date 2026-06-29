@@ -15,7 +15,7 @@
     <div class="wordmark"><span class="dot"></span>RevE 工作台</div>
     <div class="nav-label">内容</div>
     <div class="navitem on" data-p="p-strategy" onclick="nav(this)">⚙ 策略</div>
-    <div class="navitem" data-p="p-daily" onclick="nav(this)">▤ 日报审核</div>
+    <div class="navitem" data-p="p-daily" onclick="nav(this); loadReports()">▤ 日报审核</div>
     <div class="navitem" data-p="p-weekly" onclick="nav(this)">▤ 周报审核</div>
     <div class="navitem" data-p="p-monthly" onclick="nav(this)">▤ 月报审核</div>
     <div class="nav-label">运营</div>
@@ -65,14 +65,14 @@
     <!-- 日报审核 -->
     <section id="p-daily" class="panel">
       <h1>日报审核</h1>
-      <p class="desc">AI 自动产出候选（RC），人工确认后发布。</p>
+      <p class="desc">引擎按天策展出候选日报（草稿），人工预览后确认发布。</p>
       <div class="card sched-card" onclick="openSched('日报')">
         <h4>⏰ 时间设置</h4>
         <div class="when"><span class="lab">审核时间：</span>每天 17:00</div>
         <div class="when"><span class="lab">发出时间：</span>每周一 09:30</div>
         <div class="statusline">点击修改</div>
       </div>
-      <div style="margin-top:20px" id="dailyDrafts"></div>
+      <div style="margin-top:20px" id="reportList"><div class="muted">加载中…</div></div>
     </section>
 
     <!-- 周报审核 -->
@@ -175,6 +175,16 @@
   </div>
 </div>
 
+<!-- 报告预览 modal -->
+<div class="modal-bg" id="reportModal">
+  <div class="modal" style="max-width:680px">
+    <button class="modal-x" onclick="closeReport()">×</button>
+    <div class="eyebrow">日报预览</div>
+    <h3 id="mTitle"></h3>
+    <div id="mBody" style="max-height:60vh;overflow:auto;margin-top:10px"></div>
+  </div>
+</div>
+
 <script src="assets/data.js"></script>
 <script>
 function nav(el){
@@ -183,13 +193,47 @@ function nav(el){
   el.classList.add('on');
   document.getElementById(el.dataset.p).classList.add('on');
 }
-// 日报审核草稿列表（用同一份情报数据生成 RC 列表）
-document.getElementById('dailyDrafts').innerHTML = INTEL.map(i=>
-  `<div class="draftrow">
-     <div><span class="pill draft">RC</span>&nbsp; <span class="chip cat-${i.category}">${i.category}</span>&nbsp; ${i.title}</div>
-     <div style="display:flex;gap:8px"><button class="btn btn-ghost btn-sm">查看</button><button class="btn btn-grad btn-sm">通过</button></div>
-   </div>`).join('') +
-  `<div style="margin-top:14px;text-align:right"><button class="btn btn-grad">全部通过并发布日报</button></div>`;
+// ===== 日报审核：拉取按天策展出的报告草稿 =====
+const RDIR='data/reports/';
+let REPORTS=null, APPROVED={};
+async function loadReports(){
+  if(REPORTS){ renderReports(); return; }
+  try{
+    const r=await fetch(RDIR+'index.json',{cache:'no-store'}); REPORTS=(await r.json()).reports||[];
+  }catch(e){ document.getElementById('reportList').innerHTML='<div class="muted">加载失败：'+e+'</div>'; return; }
+  renderReports();
+}
+function renderReports(){
+  const esc=s=>(s||'').toString().replace(/</g,'&lt;');
+  document.getElementById('reportList').innerHTML = REPORTS.map(r=>{
+    const key=r.date+'_'+r.role, pub=APPROVED[key];
+    return '<div class="draftrow">'+
+      '<div style="flex:1">'+
+        '<span class="pill '+(pub?'live':'draft')+'">'+(pub?'已发布':'草稿')+'</span>&nbsp; '+
+        '<b>'+r.date+' · '+r.role+'</b> <span class="muted" style="font-size:12px">'+r.count+' 条</span>'+
+        '<div class="muted" style="font-size:12.5px;margin-top:4px">'+esc(r.lede)+'</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        '<button class="btn btn-ghost btn-sm" onclick="previewReport(\''+r.file+'\')">预览</button>'+
+        '<button class="btn btn-grad btn-sm" onclick="approveReport(\''+key+'\',this)">'+(pub?'已发布':'通过发布')+'</button>'+
+      '</div></div>';
+  }).join('');
+}
+function approveReport(key,btn){ APPROVED[key]=true; btn.textContent='已发布'; btn.closest('.draftrow').querySelector('.pill').className='pill live'; btn.closest('.draftrow').querySelector('.pill').textContent='已发布'; }
+async function previewReport(file){
+  let d; try{ d=await (await fetch(RDIR+file,{cache:'no-store'})).json(); }catch(e){ return; }
+  const esc=s=>(s||'').toString().replace(/</g,'&lt;');
+  document.getElementById('mTitle').textContent=d.date+' · '+d.role+' 日报';
+  document.getElementById('mBody').innerHTML='<div class="muted" style="margin-bottom:12px">'+esc(d.lede)+'</div>'+
+    d.items.map((it,i)=>'<div style="padding:12px 0;border-top:1px solid var(--line)">'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><span class="chip cat-'+((it.category||[])[0]||'行业')+'">'+(it.category||[]).join('/')+'</span><span class="chip">'+esc(it.signal_type)+'</span><span class="chip">分 '+it.score+'</span></div>'+
+      '<b>'+(i+1)+'. '+esc(it.title)+'</b>'+
+      '<div style="font-size:13px;color:#33373E;margin-top:4px">点评：'+esc(it.comment)+'</div>'+
+      '<div style="font-size:13px;color:#33373E">动作：'+esc(it.action)+'</div>'+
+      '<div class="src" style="margin-top:4px">来源：'+esc(it.source)+'</div></div>').join('');
+  document.getElementById('reportModal').classList.add('show');
+}
+function closeReport(){document.getElementById('reportModal').classList.remove('show');}
 
 const SCHED={
   '日报':{r:'每天 17:00', s:'每周一 09:30'},

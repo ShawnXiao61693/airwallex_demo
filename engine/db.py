@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS news (
   url TEXT UNIQUE,                 -- 去重靠它
   title TEXT, source TEXT, source_country TEXT, lang TEXT,
   published_at TEXT, fetched_at TEXT, raw_content TEXT,
+  bucket_date TEXT,                -- 这条归属哪一天的日报（回填用）
   status TEXT DEFAULT 'raw',       -- raw / refined / irrelevant
   -- 以下由 Refiner 回填：
   relevant INTEGER,
@@ -28,16 +29,17 @@ def init_db():
         c.executescript(SCHEMA)
 
 def upsert_raw(it):
+    bucket = it.get('bucket_date') or datetime.date.today().isoformat()
     with conn() as c:
         c.execute(
             """INSERT OR IGNORE INTO news
-               (url,title,source,source_country,lang,published_at,fetched_at,raw_content,status)
-               VALUES (?,?,?,?,?,?,?,?,'raw')""",
+               (url,title,source,source_country,lang,published_at,fetched_at,raw_content,bucket_date,status)
+               VALUES (?,?,?,?,?,?,?,?,?,'raw')""",
             (it['url'], it['title'], it.get('source'), it.get('country'), it.get('lang'),
              it.get('published_at'), datetime.datetime.utcnow().isoformat(),
-             it.get('raw_content', it['title'])))
+             it.get('raw_content', it['title']), bucket))
 
-def get_unrefined(limit=200):
+def get_unrefined(limit=5000):
     with conn() as c:
         return c.execute("SELECT * FROM news WHERE status='raw' LIMIT ?", (limit,)).fetchall()
 
@@ -64,3 +66,16 @@ def get_for_daily(role, top_n):
             """SELECT * FROM news WHERE status='refined' AND relevant=1 AND roles LIKE ?
                ORDER BY s_total DESC LIMIT ?""",
             (f'%"{role}"%', top_n)).fetchall()
+
+# ---- 按天回填用 ----
+def list_bucket_dates():
+    with conn() as c:
+        return [r[0] for r in c.execute(
+            "SELECT DISTINCT bucket_date FROM news WHERE status='refined' AND relevant=1 ORDER BY bucket_date").fetchall()]
+
+def get_candidates(bucket_date, role, limit=40):
+    with conn() as c:
+        return c.execute(
+            """SELECT * FROM news WHERE status='refined' AND relevant=1
+               AND bucket_date=? AND roles LIKE ? ORDER BY s_total DESC LIMIT ?""",
+            (bucket_date, f'%"{role}"%', limit)).fetchall()

@@ -11,22 +11,25 @@ PROMPT = """你是 Airwallex（空中云汇，跨境支付/金融科技公司）
 针对下面这条新闻，判断它对 Airwallex 的一线销售是否有用，并打标、评分、提炼成可直接用的弹药。
 要求：只依据给定信息，不要编造；若与 Airwallex 销售无关，relevant 设为 false。
 
-可选分类(可多选)：{cats}
-角色：AE(拓新销售) / AM(客户成功)
-可选行业：{inds}
-信号类型：线索 / 触发 / 竞品 / 话题 / 雷区
+分类 category 只能从这 6 类里选(可多选)：{cats}
+  · 我方生态 = Airwallex/空中云汇 自己的消息（融资/新品/牌照/高管/合作）。
+  · 竞品 = 其他公司：PingPong / 连连 / 万里汇(WorldFirst) / XTransfer / Wise / Stripe / 蚂蚁国际 等。
+  · 关键：Airwallex 自己的新闻只归"我方生态"，绝不要标成"竞品"。
+角色 roles：AE(拓新销售) / AM(客户成功)，可多选。
+行业 industry：{inds}
+信号类型 signal_type（只填一个）：线索 / 触发 / 竞品 / 话题 / 雷区
 
 新闻：
 标题：{title}
-来源：{source}（{country}）
-时间：{date}
+摘要：{summary}
+来源：{source}　时间：{date}
 
-只输出一个 JSON 对象，字段如下（分数 0~1）：
+只输出一个 JSON 对象（分数 0~1）：
 {{"relevant": true/false,
   "category": ["..."], "roles": ["AE"|"AM"], "industry": ["..."], "signal_type": "...",
   "s_rel": 0.0, "s_time": 0.0, "s_act": 0.0, "s_cred": 0.0, "s_total": 0.0,
-  "comment": "一句话点评：这条对销售意味着什么(so-what)",
-  "action": "建议销售下一步做什么动作",
+  "comment": "一句话点评：这条对销售意味着什么(so-what)，要具体",
+  "action": "建议销售下一步做什么动作，要具体",
   "products": ["关联的 Airwallex 产品"],
   "citation": "用于佐证的出处(标题/来源)"}}"""
 
@@ -40,8 +43,8 @@ def refine():
     ok = 0
     for row in rows:
         p = PROMPT.format(cats="/".join(CATEGORIES), inds="/".join(INDUSTRIES),
-                          title=row['title'], source=row['source'],
-                          country=row['source_country'], date=row['published_at'])
+                          title=row['title'], summary=(row['raw_content'] or '')[:500],
+                          source=row['source'], date=row['published_at'])
         try:
             resp = client.chat.completions.create(
                 model=LLM_MODEL, messages=[{"role": "user", "content": p}], temperature=0.2)
