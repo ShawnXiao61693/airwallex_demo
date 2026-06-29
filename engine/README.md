@@ -1,41 +1,73 @@
-# engine —— 日报引擎（最小可跑切片）
+# engine —— 后端引擎
 
-一条真能跑的链路：**采集 → 提炼 → 制作**，产出真实日报 JSON（供前端渲染）。
-对应架构里的 Collector / Refiner / Composer，数据落在一张 `news` 表（SQLite）。
+销售情报平台的后端：把新闻从外部抓进来 → LLM 提炼评分 → 策展成日报 → 存库 → 供前端/后台读取。
+日报全自动走这条链路；周报由外部 agent 人工策展后经 API 上传审核。
+
+> 部署：服务器 `~/airwallex/engine/`，venv `.venv`(py3.9)。数据库用 Supabase（托管 Postgres）。所有 key 在 `.env`（见 `.env.example`）。
+
+---
+
+## 数据流主链路（一条新闻的一生）
 
 ```
-collect.py   Collector  Brave Search API 拉真实新闻 → news(raw)
-refine.py    Refiner    LLM 逐条判断/打标/评分/炼点评动作 → news(refined)
-compose.py   Composer   按角色取数 → daily_AE.json / daily_AM.json
-db.py        一张 news 表（status: raw→refined→irrelevant）
-run.py       串起来（生产由 cron 跑它）
+Brave News API
+   │  collect.py   采集，归一化，入库
+   ▼
+news 表 (raw) ──────────── db.py（Supabase Postgres）
+   │  refine.py    并发 LLM：判相关性 / 打标 / 评分 / 炼点评
+   ▼
+news 表 (refined / irrelevant)
+   │  compose.py   按「天 × 角色」策展 LLM：去重 + 多样化 + 排序 + 导语
+   ▼
+data/reports/*.json  →  前端 app.html 按角色展示
 ```
+
+| 文件 | 角色 | 用途 |
+|---|---|---|
+| `collect.py` | **Collector 采集** | 用 Brave Search API 按 `config` 里的查询拉新闻，归一化字段后写入 `news` 表（status=raw，按 URL 去重）。 |
+| `refine.py` | **Refiner 提炼** | 读 raw，**并发 12 路** 调 LLM：判断对销售是否有用、打分类/角色/行业标签、给信号强度评分、炼成可直接用的"弹药"点评，回写 `news`（refined / irrelevant）。差异化核心，逻辑全在 prompt 里。 |
+| `compose.py` | **Composer 制作** | 按「天 × 角色(AE/AM)」用策展 LLM 出日报：同事件去重、保证多样性、排序、写导语，产出 `data/reports/report_<date>_<role>.json` + `index.json`。仅日报走它。 |
+
+---
+
+## 数据与配置
+
+| 文件 | 用途 |
+|---|---|
+| `db.py` | **数据层**。封装 Supabase Postgres（走 pooler 连接串 `DATABASE_URL`）。一张 `news` 表（raw→refined→irrelevant）+ 一张 `publications` 表（周/月报期数与状态）。提供 upsert/查询/状态更新等 helper。本质是标准 PG，将来自托管换连接串即可。 |
+| `config.py` | **配置中心**。Brave 查询词、新闻分类法、角色/行业枚举、LLM（key/base_url/model，从环境读）、日报条数等阈值。 |
+| `.env.example` | 环境变量模板。`cp .env.example .env` 后填入 `LLM_API_KEY`(OpenRouter)、`BRAVE_API_KEY`、`DATABASE_URL`(Supabase)、`API_TOKEN`。`.env` 已被 gitignore。 |
+| `requirements.txt` | 依赖：`requests`、`openai`、`psycopg[binary]`、`flask`。 |
+
+---
+
+## 服务与运维
+
+| 文件 | 用途 |
+|---|---|
+| `api.py` | **周报上传/审核 Flask API**（systemd 服务 `airwallex-api`，:8090，nginx `/api` 反代）。`POST /api/weekly` 上传周报 HTML 落成草稿（需 token）、`POST /api/publish` 标为已发布、`GET /api/slots` 列出周期 slots 及状态供后台渲染。上传契约见 `docs/周报上传接口.md`。 |
+| `run.py` | 串起主链路：`collect → refine → compose`。生产由定时任务跑它。 |
+| `run.sh` | 一键脚本：加载 `.env` → 跑 `run.py` → `export.py` 导库 → 同步日报 JSON 到 nginx 目录。 |
+| `export.py` | 把 `news` 表导成前端可读 JSON（供后台「情报库」页浏览），带统计（总数/已提炼/无关/raw）。`run.sh` 末尾会调它。 |
+| `backfill.py` | **历史回填**：对日期区间内每天用 Brave 拉那天的新闻 → 提炼 → 按天策展出日报。用法 `python backfill.py 2026-06-22 2026-06-28`。 |
+
+---
 
 ## 跑起来
 
 ```bash
 cd engine
-pip install -r requirements.txt
+cp .env.example .env          # 填入 LLM / Brave / DATABASE_URL / API_TOKEN
+python -m venv .venv && .venv/bin/pip install -r requirements.txt
 
-# 配 LLM（OpenAI 兼容；用 Kimi 就填 Kimi 的 base_url/model）
-export LLM_API_KEY=你的key
-export LLM_BASE_URL=https://api.openai.com/v1     # Kimi: https://api.moonshot.cn/v1
-export LLM_MODEL=gpt-4o-mini                       # Kimi: 例如 kimi-k2 / moonshot-v1-8k
-
-python run.py        # → 生成 daily_AE.json / daily_AM.json
+./run.sh                      # 跑一遍主链路 + 导出
+# 或回填历史：
+.venv/bin/python backfill.py 2026-06-22 2026-06-28
 ```
-
-采集需配 `BRAVE_API_KEY`（免费版即可），可单独验证：`python -c "import db,collect; db.init_db(); collect.collect()"`
 
 ## 现在是什么、不是什么（诚实说明）
 
-- **是**：真实采集 + 真实 LLM 打标评分 + 出真日报 JSON，整条管道能跑。
-- **暂用 SQLite**：量大再换 Postgres + pgvector（schema 一致）。
-- **基于标题+摘要加工**：Brave 给标题/来源/摘要(description)；正文需要再抓（Crawl4AI/trafilatura）——列入下一步，能显著提升点评质量。
-- **Composer 暂为确定性 top-N**：策展 LLM（整组精选+排序+导语）是下一步升级（见 compose.py TODO）。
-- **去重**：先按 URL；语义去重（pgvector + embedding）后续加。
-- **周报/月报**：不走本引擎，手搓上传。
-
-## 下一步
-
-正文抓取 → 语义去重 → Composer 策展 LLM → 推送(飞书) → 埋点回流。
+- **是**：真实采集 + 真实 LLM 提炼评分 + 策展出真日报，整条管道在线上能跑。
+- **基于标题 + 摘要加工**：Brave 给标题/来源/摘要；正文需再抓（Crawl4AI/trafilatura）——下一步，能显著提升点评质量。
+- **去重**：先按 URL + compose 阶段策展 LLM 同事件去重；语义去重（pgvector + embedding）后续加。
+- **周报/月报**：不走本引擎。周报经 `api.py` 上传审核；月报暂缓。
