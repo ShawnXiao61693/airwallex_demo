@@ -3,16 +3,22 @@ import os
 
 # ---- 数据源：GDELT 查询（关键词）。免费、免部署、免 key ----
 # 覆盖：竞品 + 跨境支付 + 出海 + 监管。可继续加。
-# 注意：竞品名里 Wise/Stripe/PingPong 等是常见英文词，单独 OR 会捞进大量噪音。
-# 用精确短语 + 行业限定收紧；最终信号保证仍在 Refiner。查询需按效果持续调优。
-GDELT_QUERIES = [
-    '"Airwallex"',
-    '"cross-border payment" OR "跨境支付"',
-    '"跨境电商" OR "企业出海"',
-    '"XTransfer" OR "WorldFirst" OR "stablecoin license"',
+# ---- 数据源：Brave Search API（新闻搜索）----
+# 比 GDELT 更相关、支持中文查询、结果自带摘要(description)，refine 上下文更足。
+BRAVE_API_KEY = os.getenv('BRAVE_API_KEY', '')
+BRAVE_QUERIES = [
+    'Airwallex 空中云汇 最新',
+    'PingPong 跨境支付',
+    'XTransfer 外贸 跨境',
+    '万里汇 WorldFirst 跨境',
+    '连连 跨境支付',
+    '跨境支付 出海 新规 监管',
+    '跨境电商 政策 平台',
+    '稳定币 牌照 跨境',
+    '企业出海 融资 新市场',
 ]
-GDELT_MAXRECORDS = 20      # 每个查询最多取多少条
-GDELT_TIMESPAN = '3d'      # 近 3 天
+BRAVE_COUNT = 10           # 每查询取多少条
+BRAVE_FRESHNESS = 'pw'     # pd=近一天 / pw=近一周 / pm=近一月
 
 # ---- 情报分类法（喂给 Refiner）----
 CATEGORIES = ['竞品', '监管牌照', '汇率宏观', '目标行业', '客户潜客', '我方生态']

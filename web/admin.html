@@ -19,6 +19,7 @@
     <div class="navitem" data-p="p-weekly" onclick="nav(this)">▤ 周报审核</div>
     <div class="navitem" data-p="p-monthly" onclick="nav(this)">▤ 月报审核</div>
     <div class="nav-label">运营</div>
+    <div class="navitem" data-p="p-db" onclick="nav(this); loadDB()">▤ 情报库</div>
     <div class="navitem" data-p="p-stats" onclick="nav(this)">▦ 数据统计</div>
     <div class="navitem" data-p="p-users" onclick="nav(this)">◔ 用户列表</div>
     <div style="position:absolute;bottom:22px"><a class="back" href="index.html" style="color:#6B7280">← 返回首页</a></div>
@@ -141,6 +142,24 @@
       </div>
     </section>
 
+    <!-- 情报库 -->
+    <section id="p-db" class="panel">
+      <h1>情报库</h1>
+      <p class="desc">引擎采集 + Refiner 加工后的真实数据，直接看库里有什么。</p>
+      <div id="dbStats" class="grid-3" style="margin-bottom:16px"></div>
+      <div class="tabs" style="padding:0 0 14px">
+        <button class="tab on" data-f="refined" onclick="dbFilter(this)">已加工（信号）</button>
+        <button class="tab" data-f="irrelevant" onclick="dbFilter(this)">已降噪（噪音）</button>
+        <button class="tab" data-f="all" onclick="dbFilter(this)">全部</button>
+      </div>
+      <div class="card tile" style="padding:0;overflow:auto;max-height:64vh">
+        <table class="tbl" id="dbTable">
+          <thead><tr><th>状态</th><th>分类</th><th>角色</th><th>信号</th><th>分</th><th>来源</th><th>标题</th><th>点评</th></tr></thead>
+          <tbody><tr><td colspan="8" style="padding:18px;color:var(--muted)">加载中…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+
   </main>
 </div>
 
@@ -185,6 +204,46 @@ function openSched(t){
 }
 function closeSched(){document.getElementById('schedModal').classList.remove('show');}
 document.getElementById('schedModal').addEventListener('click',e=>{if(e.target.id==='schedModal')closeSched();});
+
+// ===== 情报库浏览（拉取引擎导出的 data/news.json）=====
+let DB=null, DBFILTER='refined';
+async function loadDB(){
+  if(DB){ renderDB(); return; }
+  try{
+    const r=await fetch('data/news.json',{cache:'no-store'});
+    DB=await r.json();
+  }catch(e){
+    document.querySelector('#dbTable tbody').innerHTML='<tr><td colspan="8" style="padding:18px">加载失败：'+e+'（引擎还没导出 data/news.json？）</td></tr>';
+    return;
+  }
+  const s=DB.stats||{};
+  document.getElementById('dbStats').innerHTML=
+    statCard('总采集',s.total)+statCard('已加工 · 信号',s.refined)+statCard('已降噪 · 噪音',s.irrelevant);
+  renderDB();
+}
+function statCard(l,n){return '<div class="card stat"><div class="n grad">'+(n??0)+'</div><div class="l">'+l+'</div></div>';}
+function dbFilter(btn){
+  document.querySelectorAll('#p-db .tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on'); DBFILTER=btn.dataset.f; renderDB();
+}
+function renderDB(){
+  if(!DB) return;
+  const esc=s=>(s||'').toString().replace(/</g,'&lt;');
+  let items=(DB.items||[]);
+  if(DBFILTER!=='all') items=items.filter(i=>i.status===DBFILTER);
+  const rows=items.map(i=>
+    '<tr>'+
+    '<td><span class="pill '+(i.status==='refined'?'live':'draft')+'">'+esc(i.status)+'</span></td>'+
+    '<td style="font-size:12px">'+(i.category||[]).join('/')+'</td>'+
+    '<td style="font-size:12px">'+(i.roles||[]).join('/')+'</td>'+
+    '<td style="font-size:12px">'+esc(i.signal_type)+'</td>'+
+    '<td>'+(i.s_total??'')+'</td>'+
+    '<td style="font-size:12px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+esc(i.source)+'</td>'+
+    '<td style="max-width:300px"><a href="'+esc(i.url)+'" target="_blank">'+esc(i.title)+'</a></td>'+
+    '<td style="max-width:340px;font-size:12.5px;color:#33373E">'+esc(i.comment)+'</td>'+
+    '</tr>').join('');
+  document.querySelector('#dbTable tbody').innerHTML=rows||'<tr><td colspan="8" style="padding:18px;color:var(--muted)">该筛选下无数据</td></tr>';
+}
 </script>
 </body>
 </html>

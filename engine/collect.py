@@ -1,52 +1,43 @@
-# Collector（采集 · Engine）—— 从 GDELT 拉真实新闻 → 归一化 → 入库(raw)
-# 这是"薄摄取层"：脏活（多源覆盖）交给 GDELT，这里只做拉取+归一+去重入库。
-import requests, datetime, time
-from config import GDELT_QUERIES, GDELT_MAXRECORDS, GDELT_TIMESPAN
+# Collector（采集 · Engine）—— 用 Brave Search API 拉真实新闻 → 归一化 → 入库(raw)
+# Brave 比 GDELT 更相关、支持中文、结果自带摘要(description)，喂给 Refiner 上下文更足。
+import requests, time
+from config import BRAVE_API_KEY, BRAVE_QUERIES, BRAVE_COUNT, BRAVE_FRESHNESS
 import db
 
-GDELT = "https://api.gdeltproject.org/api/v2/doc/doc"
-GAP_SEC = 6          # GDELT 免费 API：每 5 秒最多 1 次请求，间隔留 6 秒保险
+BRAVE_URL = "https://api.search.brave.com/res/v1/news/search"
+GAP_SEC = 1.1   # Brave 免费版约 1 req/s
 
-def _iso(s):
-    try:
-        return datetime.datetime.strptime(s, "%Y%m%dT%H%M%SZ").isoformat()
-    except Exception:
-        return s
-
-def _fetch(params, retries=3):
-    # GDELT 限流有两种表现：429，或 200 但正文是纯文本提示。两者都退避重试。
-    for i in range(retries + 1):
-        r = requests.get(GDELT, params=params, timeout=30)
-        throttled = (r.status_code == 429) or ('limit requests' in r.text.lower())
-        if throttled:
-            time.sleep(6 + 4 * i); continue
-        r.raise_for_status()
-        try:
-            return r.json().get('articles', [])
-        except ValueError:                     # 200 但非 JSON（多为节流/空）→ 退避重试
-            time.sleep(6 + 4 * i); continue
-    return []
+def _brave(q):
+    headers = {'Accept': 'application/json', 'X-Subscription-Token': BRAVE_API_KEY}
+    params = {'q': q, 'count': BRAVE_COUNT, 'freshness': BRAVE_FRESHNESS, 'spellcheck': 0}
+    r = requests.get(BRAVE_URL, headers=headers, params=params, timeout=30)
+    r.raise_for_status()
+    return r.json().get('results', [])
 
 def collect():
+    if not BRAVE_API_KEY:
+        print("[collect] 未设置 BRAVE_API_KEY，跳过采集")
+        return
     total = 0
-    for idx, q in enumerate(GDELT_QUERIES):
-        if idx:
-            time.sleep(GAP_SEC)                 # 查询之间留间隔
-        params = {'query': q, 'mode': 'ArtList', 'format': 'json',
-                  'maxrecords': GDELT_MAXRECORDS, 'timespan': GDELT_TIMESPAN, 'sort': 'DateDesc'}
+    for i, q in enumerate(BRAVE_QUERIES):
+        if i:
+            time.sleep(GAP_SEC)
         try:
-            arts = _fetch(params)
+            results = _brave(q)
         except Exception as e:
-            print(f"[collect] 查询失败 {q[:30]}…: {e}")
+            print(f"[collect] 查询失败 {q}: {e}")
             continue
-        for a in arts:
+        for a in results:
             if not a.get('url'):
                 continue
+            desc = a.get('description') or ''
             db.upsert_raw({
-                'url': a.get('url'), 'title': a.get('title'),
-                'source': a.get('domain'), 'country': a.get('sourcecountry'),
-                'lang': a.get('language'), 'published_at': _iso(a.get('seendate', '')),
-                'raw_content': a.get('title'),
+                'url': a.get('url'),
+                'title': a.get('title'),
+                'source': (a.get('meta_url') or {}).get('hostname') or (a.get('profile') or {}).get('name'),
+                'country': None, 'lang': None,
+                'published_at': a.get('page_age') or a.get('age'),
+                'raw_content': ((a.get('title') or '') + ' — ' + desc).strip(' —'),
             })
             total += 1
     print(f"[collect] 采集 {total} 条（去重后入库）")
