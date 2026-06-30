@@ -31,6 +31,16 @@
   .loopbar{margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);font-family:var(--mono);
     font-size:11.5px;color:#7A4BD0;text-align:center;line-height:1.7}
   .diagram .cap{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
+  /* 分工标注 */
+  .part-h{font-family:var(--mono);font-size:12.5px;letter-spacing:.05em;color:var(--violet);
+    font-weight:700;margin:26px 0 10px;padding-top:4px}
+  .part-h .who{color:var(--muted-2);font-weight:400}
+  .coauth{border:1px solid var(--line);border-left:3px solid var(--violet);border-radius:0 10px 10px 0;
+    background:var(--grad-soft);padding:14px 18px;margin:8px 0 16px}
+  .coauth ul{margin:0;padding-left:18px}
+  .coauth li{font-size:14.5px;line-height:1.7;margin-bottom:8px;color:#2C3036}
+  .coauth li:last-child{margin-bottom:0}
+  .coauth li b{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -86,20 +96,48 @@
       <div class="qa" id="q1">
         <div class="q-label">问题一</div>
         <blockquote class="q-orig">你怎么评估你的降噪在变好还是变差？现在有什么方法能衡量？</blockquote>
-        <p class="q-read"><b>我的理解：</b>降噪不能靠我自己说"变好了"，得有可量化、可跨版本比较的方法，让质量本身变成一件可被管理的事。</p>
-        <p>现在产品里已经有一个真实信号：「有用 / 没用」反馈汇成的有用率。它能反映"我留下来的情报里，有多少真的被销售认可"，而且能<b>按角色分开看</b>——AE 觉得有用的和 AM 觉得有用的，本就不是一回事。这也正是我为什么先把反馈按钮做出来：没有它，衡量降噪就只能靠感觉。</p>
-        <p>但我很清楚这个信号有个盲区：<b>它只覆盖我留下来的，看不到我误杀的</b>。举个例子，如果某次我把降噪调得更"狠"，有用率可能不降反升，但其实我把一批边缘有用的情报也一起误杀了——光看有用率根本发现不了。所以要做扎实，得两条腿走：</p>
+        <p class="q-read"><b>我的理解：</b>降噪不能靠我自己说"变好了"，得有可量化、可定位、可对照的方法，让质量本身变成一件能被管理的事。</p>
+        <p>这一块我想讲得坦诚些：<b>下面的框架是我的思路；但其中不少具体技术的落地——尤其是去重——是我和 Claude Code 一边讨论、一边测试定下来的。</b>所以我把"我搭的框架"和"我们一起补的技术点"分开说，谁的贡献都讲清楚。</p>
+
+        <p class="part-h">我搭的框架 <span class="who">· 降噪是一条多层漏斗</span></p>
+        <p>我没把降噪当成一个动作，而是当成一条从进到出、层层把关的漏斗——每一层都在去噪。"衡量降噪"就是：既看每一层把关得好不好，也看整条漏斗的转化。</p>
         <div class="diagram">
           <div class="flow">
-            <div class="node">在线信号<span class="ns">有用率 · 按角色</span></div>
-            <div class="arrow">＝精确率</div>
-            <div class="node accent">质量是否在变好</div>
-            <div class="arrow">＋召回率＝</div>
-            <div class="node">离线回归<span class="ns">golden set · 抽检误杀</span></div>
+            <div class="node">采集 N 条<span class="ns">Collector</span></div>
+            <div class="arrow">→ 判相关 →</div>
+            <div class="node">相关 M 条<span class="ns">Refiner</span></div>
+            <div class="arrow">→ 编排选 →</div>
+            <div class="node">入报 K 条<span class="ns">Composer · 6+2</span></div>
+            <div class="arrow">→ 用户判 →</div>
+            <div class="node accent">有用 J 条<span class="ns">反馈</span></div>
           </div>
-          <div class="cap">精确率看"留下的准不准"，召回率看"丢掉的冤不冤"，两个一起才是全貌</div>
+          <div class="cap">每层一个转化率；某天报告噪音高，顺着漏斗就能定位是哪一层漏的</div>
         </div>
-        <p>在线持续盯有用率（相当于精确率）；离线建一个人工标注的小样本集（golden set），每次改 prompt 或换模型，就拿它跑一遍准确率 / 召回率，把"感觉变好了"变成一个能跨版本对比的数；同时定期从"被判为噪音"的那一堆里抽样复核，把误杀率盯住。这样"变好还是变差"才有据可依，而不是我的一面之词。</p>
+        <p>每一层的做法，以及我打算怎么判断它好不好：</p>
+        <table class="cadence-table">
+          <thead><tr><th>层</th><th>做的事</th><th>怎么判断好坏</th></tr></thead>
+          <tbody>
+            <tr><td>Collector 采集</td><td>设关键词 / 语言 / 竞品 / 时间窗 + URL 去重</td><td>每条查询的<b>下游相关率</b>（低产的砍）、"必抓清单"的<b>召回率</b>（漏没漏大事）、跨查询<b>重复率</b></td></tr>
+            <tr><td>Refiner 提炼</td><td>逐条 LLM 判相关 + 打标 + 评分</td><td>当成分类器：<b>准确率 / 召回率 / F1</b>、混淆矩阵、评分校准、同条两跑的一致性</td></tr>
+            <tr><td>Composer 编排</td><td>同事件去重 + 类目多样化 + 选 6+2</td><td>终稿<b>同事件重复率</b>（应≈0）、<b>类目多样性</b>（别一类刷屏）</td></tr>
+            <tr><td>人审</td><td>RevE 看候选、选一版、可改可拦</td><td><b>人改掉 AI 默认版的比例</b>（随时间下降＝AI 在变好）；这里也正好采 golden set 样本</td></tr>
+            <tr><td>反馈</td><td>有用 / 没用 + 点击行为</td><td><b>有用率（分角色）</b>、行动转化率；盲区＝只覆盖留下来的，需靠上面两条补召回</td></tr>
+          </tbody>
+        </table>
+
+        <p class="part-h">和 Claude Code 一起讨论 / 测试出来的技术点 <span class="who">· 把上面的"判断好坏"做扎实</span></p>
+        <div class="coauth">
+          <ul>
+            <li><b>两类错误显式权衡</b>：精确率（噪音漏进来）vs 召回率（有用被误杀）。多数做法只盯前者，把后者也量出来才看得全。</li>
+            <li><b>语义去重（pgvector 向量）</b>：不止按 URL，而是按向量相似度聚近重复；而且"同一事件被几个独立来源聚到一起"既是去噪、又是信源可信度的<b>印证</b>信号（呼应问题三）。<span style="color:var(--muted)">——这块我尤其依赖和 Claude 一起试。</span></li>
+            <li><b>评分校准</b>：看 s_total 和真实"有用"到底相不相关，用反馈把权重重新学一遍（接问题二）。</li>
+            <li><b>主动学习 + 置信度路由</b>：人标不动全量，就专挑模型最拿不准（分数卡在阈值边缘）的那批送人审 / 给人标——最少的标注、最快的提升。</li>
+            <li><b>改动走对照</b>：每次改 prompt / 权重，先在 golden set 上跑老 vs 新，别凭感觉上线。</li>
+            <li><b>漂移监控</b>：入库量、类目分布、来源集中度的周环比，悄悄变差能报警。</li>
+          </ul>
+        </div>
+
+        <p>诚实边界：现在真做了的是 URL 去重、Refiner 逐条过滤打标评分、Composer 去重多样化、人审选版、反馈按钮入库；而上面那套衡量体系（golden set、语义去重、评分校准）是我和 Claude 已经想清楚的路径，还没全部落地。</p>
       </div>
 
       <!-- Q2 -->
