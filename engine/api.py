@@ -164,6 +164,25 @@ def feedback():
     db.add_feedback(news_id, role, vote)
     return jsonify(ok=True)
 
+@app.get('/api/stats')
+def stats():
+    # 数据看板：合格情报量 + 真实反馈（埋点）+ 最受认可的情报
+    with db.conn() as c:
+        refined = c.execute("SELECT count(*) n FROM news WHERE status='refined' AND relevant=1").fetchone()['n']
+        votes = {r['vote']: r['n'] for r in
+                 c.execute("SELECT vote, count(*) n FROM feedback GROUP BY vote").fetchall()}
+        by_role = c.execute(
+            "SELECT role, count(*) n FROM feedback GROUP BY role ORDER BY n DESC").fetchall()
+        top = c.execute(
+            """SELECT n.title, count(*) up FROM feedback f JOIN news n ON n.id=f.news_id
+               WHERE f.vote='up' GROUP BY n.title ORDER BY up DESC LIMIT 5""").fetchall()
+    up, down = votes.get('up', 0), votes.get('down', 0)
+    total = up + down
+    return jsonify(refined=refined, up=up, down=down, total=total,
+                   useful_rate=(round(100 * up / total) if total else None),
+                   by_role=[{'role': r['role'], 'n': r['n']} for r in by_role],
+                   top=[{'title': r['title'], 'up': r['up']} for r in top])
+
 @app.get('/api/health')
 def health():
     return jsonify(ok=True)
