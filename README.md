@@ -5,10 +5,10 @@
 
 ## 🌐 在线体验（建议直接看这个）
 
-- **首页**：http://13.214.205.219/airwallex/
-- **解题思路 + 完成度**：http://13.214.205.219/airwallex/solution.html
-- **用户端（销售视角）**：http://13.214.205.219/airwallex/app.html　——　用 **Alex（AE）/ Cindy（AM）** 两个身份分别进，对比看到的不同
-- **RevE 工作台（管理端）**：http://13.214.205.219/airwallex/admin.html　——　看「日报审核」：AI 每天出 3 个候选，人选 1 版发布
+- **首页**：https://airwallex.clawn.dev/
+- **解题思路 + 完成度**：https://airwallex.clawn.dev/solution.html
+- **用户端（销售视角）**：https://airwallex.clawn.dev/app.html　——　用 **Alex（AE）/ Cindy（AM）** 两个身份分别进，对比看到的不同
+- **RevE 工作台（管理端）**：https://airwallex.clawn.dev/admin.html　——　看「日报审核」：AI 每天出 3 个候选，人选 1 版发布
 
 > 本地起：`cd web && python3 -m http.server 8000`（客户匹配 / 话术 / 反馈 / 审核等接口需后端，完整体验请用上面的在线地址）。
 
@@ -99,7 +99,7 @@ flowchart TB
 - 参与数据（打开率 / 点击 / 答题）与销售真实业绩、KPI 的因果关系尚无法证明，当前仅作参考。
 - 采集对微信 / 小红书生态内的、以及付费源的新闻覆盖有限。
 - 月报「人主导」意味着含人工编辑成分，本次 demo 暂未制作。
-- 真实样例直接进系统看：日报 http://13.214.205.219/airwallex/app.html ；RevE 工作台 http://13.214.205.219/airwallex/admin.html
+- 真实样例直接进系统看：日报 https://airwallex.clawn.dev/app.html ；RevE 工作台 https://airwallex.clawn.dev/admin.html
 
 ## 目录
 
