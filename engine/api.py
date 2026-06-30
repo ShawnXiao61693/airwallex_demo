@@ -212,6 +212,13 @@ def stats():
                    by_role=[{'role': r['role'], 'n': r['n']} for r in by_role],
                    top=[{'title': r['title'], 'up': r['up']} for r in top])
 
+@app.get('/api/monthly')
+def monthly_list():
+    pubs = db.list_publications('monthly')
+    return jsonify(items=[{'period': p['period'], 'title': p['title'], 'status': p['status'],
+                           'url': (f"/airwallex/{p['html_path']}" if p['html_path'] else None)}
+                          for p in pubs])
+
 @app.get('/api/health')
 def health():
     return jsonify(ok=True)

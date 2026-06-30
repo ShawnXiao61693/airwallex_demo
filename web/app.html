@@ -266,9 +266,18 @@ async function loadWeekly(){
     '<h3>'+(s.title||('周报 · '+s.period+' 当周'))+'</h3>'+
     '<div class="line"><b>打开本周周报</b> —— 翻页杂志：本周复盘 + 可复用话术 + AI 播客 + 自测 →</div></a>').join('');
 }
-function loadMonthly(){
-  document.getElementById('monthlyView').innerHTML=
-    '<div class="empty-day">月报是人主导的深度特刊——行业季度复盘、方法沉淀、AI 播客，按月发布。本期筹备中。</div>';
+async function loadMonthly(){
+  const v=document.getElementById('monthlyView');
+  v.innerHTML='<div class="loader"><div class="spinner"></div><span>加载月报…</span></div>';
+  let items;
+  try{ items=(await (await fetch('/api/monthly',{cache:'no-store'})).json()).items; }
+  catch(e){ v.innerHTML='<div class="empty-day">月报暂不可用。</div>'; return; }
+  const pub=(items||[]).filter(x=>x.status==='published');
+  if(!pub.length){ v.innerHTML='<div class="empty-day">月报是人主导的深度特刊——行业复盘、方法沉淀、AI 播客/视频，按月发布。本期筹备中。</div>'; return; }
+  v.innerHTML=pub.map(x=>'<a class="card intel" href="'+x.url+'" target="_blank" rel="noopener" style="display:block">'+
+    '<div class="meta"><span class="chip">月报</span><span class="chip">'+x.period+'</span></div>'+
+    '<h3>'+(x.title||'月度特刊')+'</h3>'+
+    '<div class="line"><b>打开月报特刊</b> —— 行业复盘 + 方法沉淀 + AI 播客/视频 →</div></a>').join('');
 }
 
 /* ---- 有用/没用 反馈（埋点）---- */

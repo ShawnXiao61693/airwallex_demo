@@ -17,7 +17,7 @@
     <div class="navitem on" data-p="p-strategy" onclick="nav(this)">⚙ 策略</div>
     <div class="navitem" data-p="p-daily" onclick="nav(this); loadReports()">▤ 日报审核</div>
     <div class="navitem" data-p="p-weekly" onclick="nav(this); loadWeekly()">▤ 周报审核</div>
-    <div class="navitem" data-p="p-monthly" onclick="nav(this)">▤ 月报审核</div>
+    <div class="navitem" data-p="p-monthly" onclick="nav(this); loadMonthlyAdmin()">▤ 月报审核</div>
     <div class="nav-label">运营</div>
     <div class="navitem" data-p="p-db" onclick="nav(this); loadDB()">▤ 情报库</div>
     <div class="navitem" data-p="p-stats" onclick="nav(this); loadStats()">▦ 数据统计</div>
@@ -98,9 +98,7 @@
         <div class="when"><span class="lab">发出时间：</span>每月 1 号 09:30</div>
         <div class="statusline">点击修改</div>
       </div>
-      <div style="margin-top:20px" class="draftrow">
-        <div><span class="pill draft">待制作</span>&nbsp; 月报 · 2026年6月特刊 <span class="muted" style="font-size:12px">人主导深度特刊，本期暂未制作（见 samples/月报样例）</span></div>
-      </div>
+      <div style="margin-top:20px" id="monthlySlots"><div class="muted">加载中…</div></div>
     </section>
 
     <!-- 数据统计 -->
@@ -318,6 +316,29 @@ async function loadWeekly(){
       ' <span class="muted" style="font-size:12px">（发布日 '+s.period+'）</span></div>'+
       '<div style="display:flex;gap:8px">'+preview+pub+'</div></div>';
   }).join('');
+}
+// ===== 月报审核：人主导特刊，脚本上传后审核发布（publications type=monthly）=====
+async function loadMonthlyAdmin(){
+  let items;
+  try{ items=(await (await fetch('/api/monthly',{cache:'no-store'})).json()).items; }
+  catch(e){ document.getElementById('monthlySlots').innerHTML='<div class="muted">加载失败：'+e+'</div>'; return; }
+  const esc=s=>(s||'').toString().replace(/</g,'&lt;');
+  if(!items.length){ document.getElementById('monthlySlots').innerHTML='<div class="muted">还没有月报；脚本上传后出现在这里。</div>'; return; }
+  document.getElementById('monthlySlots').innerHTML=items.map(m=>{
+    const pub=m.status==='published';
+    const preview=m.url?'<a class="btn btn-ghost btn-sm" href="'+m.url+'" target="_blank">预览</a>':'';
+    const pubBtn=pub?'':'<button class="btn btn-grad btn-sm" onclick="publishMonthly(\''+m.period+'\',this)">通过发布</button>';
+    return '<div class="draftrow"><div style="flex:1"><span class="pill '+(pub?'live':'draft')+'">'+(pub?'已发布':'草稿·待审核')+'</span>&nbsp; <b>月报 · '+m.period+'</b> <span class="muted" style="font-size:12px">'+esc(m.title)+'</span></div><div style="display:flex;gap:8px">'+preview+pubBtn+'</div></div>';
+  }).join('');
+}
+async function publishMonthly(period,btn){
+  btn.disabled=true; btn.textContent='发布中…';
+  try{
+    const fd=new FormData(); fd.append('period',period); fd.append('type','monthly');
+    const r=await fetch('/api/publish',{method:'POST',body:fd});
+    if(!r.ok) throw new Error(r.status);
+    loadMonthlyAdmin();
+  }catch(e){ btn.disabled=false; btn.textContent='通过发布'; alert('发布失败：'+e); }
 }
 async function publishWeekly(period,btn){
   btn.disabled=true; btn.textContent='发布中…';
