@@ -257,7 +257,7 @@ async function loadWeekly(){
   const v=document.getElementById('weeklyView');
   v.innerHTML='<div class="loader"><div class="spinner"></div><span>加载周报…</span></div>';
   let slots;
-  try{ slots=(await (await fetch('/api/slots?type=weekly',{cache:'no-store'})).json()).slots; }
+  try{ slots=(await (await fetch('/api/reports?type=weekly',{cache:'no-store'})).json()).slots; }
   catch(e){ v.innerHTML='<div class="empty-day">周报暂不可用。</div>'; return; }
   const pub=(slots||[]).filter(s=>s.state==='published');
   if(!pub.length){ v.innerHTML='<div class="empty-day">本期周报正在制作中，发布后会出现在这里。</div>'; return; }
@@ -269,10 +269,10 @@ async function loadWeekly(){
 async function loadMonthly(){
   const v=document.getElementById('monthlyView');
   v.innerHTML='<div class="loader"><div class="spinner"></div><span>加载月报…</span></div>';
-  let items;
-  try{ items=(await (await fetch('/api/monthly',{cache:'no-store'})).json()).items; }
+  let slots;
+  try{ slots=(await (await fetch('/api/reports?type=monthly',{cache:'no-store'})).json()).slots; }
   catch(e){ v.innerHTML='<div class="empty-day">月报暂不可用。</div>'; return; }
-  const pub=(items||[]).filter(x=>x.status==='published');
+  const pub=(slots||[]).filter(x=>x.state==='published');
   if(!pub.length){ v.innerHTML='<div class="empty-day">月报是人主导的深度特刊——行业复盘、方法沉淀、AI 播客/视频，按月发布。本期筹备中。</div>'; return; }
   v.innerHTML=pub.map(x=>'<a class="card intel" href="'+x.url+'" target="_blank" rel="noopener" style="display:block">'+
     '<div class="meta"><span class="chip">月报</span><span class="chip">'+x.period+'</span></div>'+

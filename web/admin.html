@@ -303,7 +303,7 @@ function renderDB(){
 const ST={empty:['待制作','draft'], draft:['草稿·待审核','draft'], published:['已发布','live']};
 async function loadWeekly(){
   let slots;
-  try{ slots=(await (await fetch('/api/slots?type=weekly',{cache:'no-store'})).json()).slots; }
+  try{ slots=(await (await fetch('/api/reports?type=weekly',{cache:'no-store'})).json()).slots; }
   catch(e){ document.getElementById('weeklySlots').innerHTML='<div class="muted">加载失败：'+e+'（API 没起？）</div>'; return; }
   const esc=s=>(s||'').toString().replace(/</g,'&lt;');
   document.getElementById('weeklySlots').innerHTML = slots.map(s=>{
@@ -317,25 +317,23 @@ async function loadWeekly(){
       '<div style="display:flex;gap:8px">'+preview+pub+'</div></div>';
   }).join('');
 }
-// ===== 月报审核：人主导特刊，脚本上传后审核发布（publications type=monthly）=====
+// ===== 月报审核：人主导特刊，脚本上传后审核发布（/api/reports type=monthly）=====
 async function loadMonthlyAdmin(){
-  let items;
-  try{ items=(await (await fetch('/api/monthly',{cache:'no-store'})).json()).items; }
+  let slots;
+  try{ slots=(await (await fetch('/api/reports?type=monthly',{cache:'no-store'})).json()).slots; }
   catch(e){ document.getElementById('monthlySlots').innerHTML='<div class="muted">加载失败：'+e+'</div>'; return; }
   const esc=s=>(s||'').toString().replace(/</g,'&lt;');
-  if(!items.length){ document.getElementById('monthlySlots').innerHTML='<div class="muted">还没有月报；脚本上传后出现在这里。</div>'; return; }
-  document.getElementById('monthlySlots').innerHTML=items.map(m=>{
-    const pub=m.status==='published';
-    const preview=m.url?'<a class="btn btn-ghost btn-sm" href="'+m.url+'" target="_blank">预览</a>':'';
-    const pubBtn=pub?'':'<button class="btn btn-grad btn-sm" onclick="publishMonthly(\''+m.period+'\',this)">通过发布</button>';
-    return '<div class="draftrow"><div style="flex:1"><span class="pill '+(pub?'live':'draft')+'">'+(pub?'已发布':'草稿·待审核')+'</span>&nbsp; <b>月报 · '+m.period+'</b> <span class="muted" style="font-size:12px">'+esc(m.title)+'</span></div><div style="display:flex;gap:8px">'+preview+pubBtn+'</div></div>';
+  document.getElementById('monthlySlots').innerHTML=slots.map(s=>{
+    const [label,cls]=ST[s.state]||ST.empty;
+    const preview=s.url?'<a class="btn btn-ghost btn-sm" href="'+s.url+'" target="_blank">预览</a>':'';
+    const pubBtn=s.state==='draft'?'<button class="btn btn-grad btn-sm" onclick="publishMonthly(\''+s.period+'\',this)">通过发布</button>':'';
+    return '<div class="draftrow"><div style="flex:1"><span class="pill '+cls+'">'+label+'</span>&nbsp; <b>月报 · '+s.period+' 当月</b> <span class="muted" style="font-size:12px">'+esc(s.title)+'</span></div><div style="display:flex;gap:8px">'+preview+pubBtn+'</div></div>';
   }).join('');
 }
 async function publishMonthly(period,btn){
   btn.disabled=true; btn.textContent='发布中…';
   try{
-    const fd=new FormData(); fd.append('period',period); fd.append('type','monthly');
-    const r=await fetch('/api/publish',{method:'POST',body:fd});
+    const r=await fetch('/api/reports/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({period:period,type:'monthly'})});
     if(!r.ok) throw new Error(r.status);
     loadMonthlyAdmin();
   }catch(e){ btn.disabled=false; btn.textContent='通过发布'; alert('发布失败：'+e); }
@@ -343,8 +341,7 @@ async function publishMonthly(period,btn){
 async function publishWeekly(period,btn){
   btn.disabled=true; btn.textContent='发布中…';
   try{
-    const fd=new FormData(); fd.append('period',period); fd.append('type','weekly');
-    const r=await fetch('/api/publish',{method:'POST',body:fd});
+    const r=await fetch('/api/reports/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({period:period,type:'weekly'})});
     if(!r.ok) throw new Error(r.status);
     loadWeekly();
   }catch(e){ btn.disabled=false; btn.textContent='通过发布'; alert('发布失败：'+e); }

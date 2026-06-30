@@ -1,8 +1,11 @@
-# 周报上传/审核 API（Flask）。nginx 反代 /api/* → 本服务(127.0.0.1:8090)。
-# 端点：
-#   POST /api/weekly   上传周报 HTML（多部分：period + file），落成草稿
-#   POST /api/publish  把某期标为已发布（周/月通用，也可给日报复用）
-#   GET  /api/slots    列出周期 slots（6-7月每周一）+ 状态，供后台「周报审核」渲染
+# 报告 API（Flask）。nginx 反代 /api/* → 本服务(127.0.0.1:8090)。
+# 统一报告（周报/月报，人工成品上传）：
+#   POST /api/reports          上传成品（multipart：type=weekly|monthly + period + file），落草稿
+#   GET  /api/reports?type=    列出该类型周期 slots + 状态（周=每周一，月=每月 1 号）
+#   POST /api/reports/publish  标为已发布（type + period）
+# 日报（AI 多候选）：/api/daily/{list,candidates,publish}
+# 其他：/api/match /api/pitch /api/feedback /api/stats
+# 旧端点 /api/weekly /api/slots /api/publish 保留为向后兼容别名
 import os, datetime, json, re
 from flask import Flask, request, jsonify
 from openai import OpenAI
@@ -40,57 +43,103 @@ SLOT_END = datetime.date(2026, 7, 31)
 def _auth():
     return bool(TOKEN) and request.headers.get('X-Api-Token') == TOKEN
 
-@app.post('/api/weekly')
-def upload_weekly():
+# ============ 统一报告 API：reports（type = weekly / monthly）============
+# 日报是 AI 多候选模型，走 /api/daily/*；周报、月报是人工成品上传，走这里。
+REPORT_DIRS = {'weekly': 'weekly', 'monthly': 'monthly'}
+
+def _next_month(d):
+    return (d.replace(day=28) + datetime.timedelta(days=7)).replace(day=1)
+
+def _gen_slots(typ):
+    """生成该类型的周期 slots + 状态（weekly=每周一，monthly=每月 1 号）。"""
+    pubs = {p['period']: p for p in db.list_publications(typ)}
+    out = []
+    if typ == 'monthly':
+        d, step, unit = SLOT_START.replace(day=1), _next_month, '当月'
+    else:
+        d = SLOT_START
+        while d.weekday() != 0:
+            d += datetime.timedelta(days=1)
+        step, unit = (lambda x: x + datetime.timedelta(days=7)), '当周'
+    while d <= SLOT_END:
+        per = d.isoformat()
+        p = pubs.get(per)
+        out.append({
+            'period': per, 'publish_date': per, 'label': f'{per} {unit}',
+            'state': p['status'] if p else 'empty',     # empty / draft / published
+            'title': (p['title'] if p else '') or '',
+            'url': (f"/airwallex/{p['html_path']}" if p else None),
+        })
+        d = step(d)
+    return out
+
+def _save_report(typ, period, title, f):
+    dirn = REPORT_DIRS.get(typ, 'weekly')
+    os.makedirs(os.path.join(NGINX_ROOT, 'data', dirn), exist_ok=True)
+    rel = f'data/{dirn}/{period}.html'
+    f.save(os.path.join(NGINX_ROOT, rel))
+    db.upsert_publication(period, typ, title, rel)
+    return rel
+
+@app.post('/api/reports')            # 上传成品 → 草稿（需 token）
+def reports_upload():
     if not _auth():
         return jsonify(error='unauthorized'), 401
-    period = (request.form.get('period') or '').strip()      # 当周周一 YYYY-MM-DD
+    typ = request.form.get('type', 'weekly')
+    if typ not in ('weekly', 'monthly'):
+        return jsonify(error='type 必须是 weekly / monthly'), 400
+    period = (request.form.get('period') or '').strip()
     title = request.form.get('title', '')
     f = request.files.get('file')
     if not period or not f:
-        return jsonify(error='need form fields: period(YYYY-MM-DD 周一) + file(html)'), 400
+        return jsonify(error='need form fields: type + period(YYYY-MM-DD) + file(html)'), 400
     try:
         datetime.date.fromisoformat(period)
     except ValueError:
         return jsonify(error='period 必须是 YYYY-MM-DD'), 400
-    os.makedirs(WEEKLY_DIR, exist_ok=True)
-    rel = f'data/weekly/{period}.html'
-    f.save(os.path.join(NGINX_ROOT, 'data', 'weekly', f'{period}.html'))
-    db.upsert_publication(period, 'weekly', title, rel)
-    return jsonify(ok=True, period=period, status='draft',
-                   url=f'/airwallex/{rel}')
+    rel = _save_report(typ, period, title, f)
+    return jsonify(ok=True, type=typ, period=period, status='draft', url=f'/airwallex/{rel}')
+
+@app.get('/api/reports')             # 列出某类型的周期 slots + 状态
+def reports_list():
+    typ = request.args.get('type', 'weekly')
+    return jsonify(type=typ, slots=_gen_slots(typ))
+
+@app.post('/api/reports/publish')    # 标为已发布
+def reports_publish():
+    src = request.get_json(silent=True) or request.form
+    period = (src.get('period') or '').strip()
+    typ = src.get('type', 'weekly')
+    if not period:
+        return jsonify(error='need period'), 400
+    db.set_published(period, typ)
+    return jsonify(ok=True, type=typ, period=period, status='published')
+
+# ---- 向后兼容旧端点（已弃用，等价于上面的 reports 调用）----
+@app.post('/api/weekly')
+def upload_weekly():
+    if not _auth():
+        return jsonify(error='unauthorized'), 401
+    period = (request.form.get('period') or '').strip()
+    title = request.form.get('title', '')
+    f = request.files.get('file')
+    if not period or not f:
+        return jsonify(error='need period + file'), 400
+    rel = _save_report('weekly', period, title, f)
+    return jsonify(ok=True, period=period, status='draft', url=f'/airwallex/{rel}')
+
+@app.get('/api/slots')
+def slots():
+    return jsonify(slots=_gen_slots(request.args.get('type', 'weekly')))
 
 @app.post('/api/publish')
 def publish():
-    # demo：发布由操作台触发，不要求 token（上传 /api/weekly 仍需 token）。
-    # 生产应把整个 admin 放到登录后。
     period = request.form.get('period', '').strip()
     typ = request.form.get('type', 'weekly')
     if not period:
         return jsonify(error='need period'), 400
     db.set_published(period, typ)
     return jsonify(ok=True, period=period, type=typ, status='published')
-
-@app.get('/api/slots')
-def slots():
-    typ = request.args.get('type', 'weekly')
-    pubs = {p['period']: p for p in db.list_publications(typ)}
-    out = []
-    d = SLOT_START
-    while d.weekday() != 0:          # 移到第一个周一
-        d += datetime.timedelta(days=1)
-    while d <= SLOT_END:
-        per = d.isoformat()
-        p = pubs.get(per)
-        out.append({
-            'period': per, 'publish_date': per,      # 发布日 = 当周周一
-            'label': f'{per} 当周',
-            'state': p['status'] if p else 'empty',  # empty / draft / published
-            'title': (p['title'] if p else '') or '',
-            'url': (f"/airwallex/{p['html_path']}" if p else None),
-        })
-        d += datetime.timedelta(days=7)
-    return jsonify(slots=out)
 
 MATCH_PROMPT = """你是 Airwallex 销售情报助手。下面是一条市场情报，以及销售 {name}（{role_desc}）负责的客户名单。
 判断这条情报和哪些客户相关，挑出**最相关的最多 3 个**；对每个客户说明为什么相关，以及一句可落地的切入角度。
@@ -211,13 +260,6 @@ def stats():
                    useful_rate=(round(100 * up / total) if total else None),
                    by_role=[{'role': r['role'], 'n': r['n']} for r in by_role],
                    top=[{'title': r['title'], 'up': r['up']} for r in top])
-
-@app.get('/api/monthly')
-def monthly_list():
-    pubs = db.list_publications('monthly')
-    return jsonify(items=[{'period': p['period'], 'title': p['title'], 'status': p['status'],
-                           'url': (f"/airwallex/{p['html_path']}" if p['html_path'] else None)}
-                          for p in pubs])
 
 @app.get('/api/health')
 def health():
