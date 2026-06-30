@@ -81,7 +81,9 @@ img{max-width:100%}
 .entry:focus-visible{outline:2px solid var(--violet);outline-offset:2px}
 .entry .num{font-family:var(--mono);font-size:13px;color:var(--orange)}
 .entry h3{font-size:22px;margin:14px 0 8px}
-.entry p{color:#9AA0AA;font-size:14px;margin:0 0 20px}
+.entry p{color:#9AA0AA;font-size:14px;margin:0 0 14px}
+.entry .hint-line{font-family:var(--mono);font-size:11.5px;line-height:1.5;color:#FF9B7F;
+  border-left:2px solid rgba(255,112,63,.5);padding-left:9px;margin:0 0 18px}
 .entry .go{font-family:var(--mono);font-size:13px;color:#fff}
 .entry::after{content:"";position:absolute;left:0;bottom:0;height:3px;width:100%;background:var(--grad);
   transform:scaleX(0);transform-origin:left;transition:transform .25s ease}
