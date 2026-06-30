@@ -6,18 +6,32 @@
 <title>Follow-up 回信 · Airwallex 销售情报</title>
 <link rel="stylesheet" href="assets/style.css">
 <style>
-  .letter{max-width:760px;margin:0 auto;padding:10px 0 64px}
-  .letter h1{font-size:28px;margin:6px 0 6px}
-  .letter .lead-note{color:var(--muted);font-size:14px;margin:0 0 26px}
-  .letter p{font-size:15.5px;line-height:1.85;color:#2C3036;margin:0 0 16px}
-  .letter b{color:var(--ink)}
-  .qa{margin:30px 0;padding-top:26px;border-top:1px solid var(--line)}
+  .intro{max-width:840px}
+  .intro h1{font-size:30px;margin:6px 0 8px}
+  .intro .lead-note{color:var(--muted);font-size:14px;margin:0 0 22px}
+  .intro p{font-size:15.5px;line-height:1.85;color:#2C3036;margin:0 0 16px}
+  .intro b{color:var(--ink)}
+  /* 问答块 */
+  .qa{margin:0 0 30px;padding-bottom:28px;border-bottom:1px solid var(--line)}
   .q-label{font-family:var(--mono);font-size:12px;letter-spacing:.12em;color:var(--violet);margin-bottom:10px}
   .q-orig{margin:0 0 14px;padding:12px 16px;border-left:3px solid var(--orange);
     background:var(--grad-soft);border-radius:0 8px 8px 0;font-size:15px;color:var(--ink);font-style:normal}
-  .q-read{color:var(--muted);font-size:14.5px}
+  .q-read{color:var(--muted);font-size:14.5px;line-height:1.8}
   .q-read b{color:var(--ink)}
-  .signoff{margin-top:40px;color:var(--muted);font-size:14px}
+  .sol-body p{font-size:15.5px;line-height:1.85;color:#2C3036;margin:0 0 15px}
+  .sol-body b{color:var(--ink)}
+  .signoff{color:var(--muted);font-size:14.5px;line-height:1.8}
+  /* 图 */
+  .diagram{margin:20px 0;padding:18px 16px;border:1px solid var(--line);border-radius:var(--radius);background:#fff;overflow-x:auto}
+  .flow{display:flex;align-items:stretch;gap:0;min-width:max-content}
+  .node{flex:0 0 auto;border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:13.5px;
+    font-weight:700;background:var(--paper);text-align:center;line-height:1.35}
+  .node .ns{display:block;font-family:var(--mono);font-weight:400;font-size:10.5px;color:var(--muted);margin-top:3px}
+  .node.accent{border-color:var(--violet);background:var(--grad-soft)}
+  .arrow{flex:0 0 auto;align-self:center;color:var(--muted-2);padding:0 9px;font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .loopbar{margin-top:12px;padding-top:11px;border-top:1px dashed var(--line);font-family:var(--mono);
+    font-size:11.5px;color:#7A4BD0;text-align:center;line-height:1.7}
+  .diagram .cap{font-size:12px;color:var(--muted);margin-top:10px;text-align:center}
 </style>
 </head>
 <body>
@@ -29,76 +43,150 @@
 </header>
 
 <div class="wrap">
-<div class="letter">
+  <!-- 开场（整段，目录在下方）-->
+  <div class="intro">
+    <div class="eyebrow" style="color:#FF703F;margin:16px 0 10px">关于这几个 Follow-up 问题的回信</div>
+    <h1>感谢提问。</h1>
+    <p class="lead-note">先说明一下：这个周末我花了不少时间做了好几种不同的尝试，所以线上现在看到的不是某一个"设计好的版本"，而是一路迭代下来的结果——有些取舍是有意为之，有些是试过之后主动放弃或押后的。</p>
 
-  <div class="eyebrow" style="color:#FF703F;margin:14px 0 10px">关于这几个 Follow-up 问题的回信</div>
-  <h1>感谢提问。</h1>
-  <p class="lead-note">说明一下：这个周末我花了不少时间做了好几种不同的尝试，所以线上现在看到的不是某一个"设计好的版本"，而是一路迭代下来的结果——有些取舍是有意为之，有些是试过之后主动放弃或押后的。</p>
+    <p>在逐条回应之前，我想先讲一个贯穿始终的基础判断，本质上是个<b>性价比的取舍</b>：在一个周末、一个人的投入下，对一个 Revenue Enablement 的交付物来说，回报最高的地方不是把信噪比打磨到极致，而是<b>让销售真的用起来，并把"人给反馈"这条回路跑通</b>。</p>
+    <p>两个原因。一是岗位本身——这个位置的价值兑现在"销售用了、出了业绩"，不在"我把新闻筛得多干净"。二是更现实的一点：信噪比要想真正"被治理"，得靠真实用户的反馈来训练；而要有真实反馈，前提是得有人在用。所以系统里那些按钮（有用 / 没用、匹配客户、生成话术）不是装饰——它们既是让销售用起来的抓手，又是我日后治理信噪比唯一靠谱的数据来源。少了这一层，我对信噪比做的一切优化，都只是关起门跟 AI 自己较劲。</p>
 
-  <p>在逐条回应之前，我想先讲一个贯穿始终的基础判断，本质上是个<b>性价比的取舍</b>：在一个周末、一个人的投入下，对一个 Revenue Enablement 的交付物来说，回报最高的地方不是把信噪比打磨到极致，而是<b>让销售真的用起来，并把"人给反馈"这条回路跑通</b>。</p>
-  <p>两个原因。一是岗位本身——这个位置的价值兑现在"销售用了、出了业绩"，不在"我把新闻筛得多干净"。二是更现实的一点：信噪比要想真正"被治理"，得靠真实用户的反馈来训练；而要有真实反馈，前提是得有人在用。所以系统里那些按钮（有用 / 没用、匹配客户、生成话术）不是装饰——它们既是让销售用起来的抓手，又是我日后治理信噪比唯一靠谱的数据来源。少了这一层，我对信噪比做的一切优化，都只是关起门跟 AI 自己较劲。</p>
-  <div class="callout" style="font-family:var(--mono);font-size:12.5px;line-height:2;background:#1A1D21;color:#D7DBE2;border:0">
-    AE / AM 用起来 → 点按钮 · 有用/没用（埋点）<br>
-    → 反馈进库 → 反向给「信源 / 评分」打分<br>
-    → 下一份情报更准 —— 人在回路里，系统在学
+    <div class="diagram">
+      <div class="flow">
+        <div class="node">多源采集<span class="ns">Collector</span></div>
+        <div class="arrow">→</div>
+        <div class="node">提炼<span class="ns">Refiner · 打标/评分</span></div>
+        <div class="arrow">→</div>
+        <div class="node">编排<span class="ns">Composer · 去重/多候选</span></div>
+        <div class="arrow">→</div>
+        <div class="node accent">人审<span class="ns">RevE 选一版</span></div>
+        <div class="arrow">→</div>
+        <div class="node">分发<span class="ns">Distributor · 按角色</span></div>
+        <div class="arrow">→</div>
+        <div class="node accent">AE / AM<span class="ns">用 + 反馈</span></div>
+      </div>
+      <div class="loopbar">↺　用户反馈（有用 / 没用 · 按钮埋点）回流 → 反哺评分、信源信誉与选材</div>
+      <div class="cap">一套引擎、四段可替换；人在回路，反馈让它自己变好</div>
+    </div>
+
+    <p>顺带说一个我一开始就觉得不对劲、并因此调整了方向的假设：<b>如果周报只是日报的聚合、月报只是把前面的新闻简编汇总，那这道题就太简单了</b>。我不认为出题的本意是这个。所以我把日 / 周 / 月当成三种服务不同决策的产品来做——周报不是把七天日报堆在一起，而是从一周情报里挑出最该被"教"的几条，转成可复用的话术、对比卡、甚至播客和自测题，让"信息"变成"能力"；月报再进一步，是人主导的深度特刊（行业复盘、方法沉淀）。<b>越往长周期走，人介入得越深，也越是用户愿意停下来参与、给出真实反馈的地方</b>——这恰恰是这套系统价值的来源，也是上面那条判断的落点。</p>
+    <p>下面逐条回应。</p>
   </div>
 
-  <p>顺带说一个我一开始就觉得不对劲、并因此调整了方向的假设：<b>如果周报只是日报的聚合、月报只是把前面的新闻简编汇总，那这道题就太简单了</b>。我不认为出题的本意是这个。所以我把日 / 周 / 月当成三种服务不同决策的产品来做，而且越往长周期走，人介入得越深、越是邀请用户参与、产生真实反馈的地方——这恰恰是这套系统价值的来源，也是上面那条判断的落点。</p>
+  <!-- 目录 + 正文 -->
+  <div class="sol-layout">
+    <nav class="sol-toc">
+      <a href="#q1">一 · 怎么衡量降噪</a>
+      <a href="#q2">二 · s_total 可复现</a>
+      <a href="#q3">三 · 信源可信</a>
+      <a href="#q4">四 · 单点失效</a>
+      <a href="#q5">五 · 再给两天</a>
+      <a href="#end">收尾</a>
+    </nav>
 
-  <p>下面逐条回应。</p>
+    <div class="sol-body">
 
-  <!-- Q1 -->
-  <div class="qa">
-    <div class="q-label">问题一</div>
-    <blockquote class="q-orig">你怎么评估你的降噪在变好还是变差？现在有什么方法能衡量？</blockquote>
-    <p class="q-read"><b>我的理解：</b>降噪不能靠我自己说"变好了"，得有可量化、可跨版本比较的方法，让质量本身变成一件可被管理的事。</p>
-    <p>现在产品里已经有一个真实信号：「有用 / 没用」反馈汇成的有用率。它能反映"我留下来的情报里，有多少真的被销售认可"。这也正是我为什么先把反馈按钮做出来——没有它，衡量降噪就只能靠感觉。</p>
-    <p>但我很清楚这个信号有个盲区：<b>它只覆盖我留下来的，看不到我误杀的</b>。所以要做扎实，得两条腿走：在线盯有用率（相当于精确率）；离线建一个人工标注的小样本集（golden set），每次改 prompt 或换模型就拿它跑一遍准确率 / 召回率，把"感觉变好了"变成一个能跨版本对比的数；同时定期从"被判为噪音"的那批里抽样复核，把误杀率也盯住。这样"变好还是变差"才有据可依，而不是我的一面之词。</p>
+      <!-- Q1 -->
+      <div class="qa" id="q1">
+        <div class="q-label">问题一</div>
+        <blockquote class="q-orig">你怎么评估你的降噪在变好还是变差？现在有什么方法能衡量？</blockquote>
+        <p class="q-read"><b>我的理解：</b>降噪不能靠我自己说"变好了"，得有可量化、可跨版本比较的方法，让质量本身变成一件可被管理的事。</p>
+        <p>现在产品里已经有一个真实信号：「有用 / 没用」反馈汇成的有用率。它能反映"我留下来的情报里，有多少真的被销售认可"，而且能<b>按角色分开看</b>——AE 觉得有用的和 AM 觉得有用的，本就不是一回事。这也正是我为什么先把反馈按钮做出来：没有它，衡量降噪就只能靠感觉。</p>
+        <p>但我很清楚这个信号有个盲区：<b>它只覆盖我留下来的，看不到我误杀的</b>。举个例子，如果某次我把降噪调得更"狠"，有用率可能不降反升，但其实我把一批边缘有用的情报也一起误杀了——光看有用率根本发现不了。所以要做扎实，得两条腿走：</p>
+        <div class="diagram">
+          <div class="flow">
+            <div class="node">在线信号<span class="ns">有用率 · 按角色</span></div>
+            <div class="arrow">＝精确率</div>
+            <div class="node accent">质量是否在变好</div>
+            <div class="arrow">＋召回率＝</div>
+            <div class="node">离线回归<span class="ns">golden set · 抽检误杀</span></div>
+          </div>
+          <div class="cap">精确率看"留下的准不准"，召回率看"丢掉的冤不冤"，两个一起才是全貌</div>
+        </div>
+        <p>在线持续盯有用率（相当于精确率）；离线建一个人工标注的小样本集（golden set），每次改 prompt 或换模型，就拿它跑一遍准确率 / 召回率，把"感觉变好了"变成一个能跨版本对比的数；同时定期从"被判为噪音"的那一堆里抽样复核，把误杀率盯住。这样"变好还是变差"才有据可依，而不是我的一面之词。</p>
+      </div>
+
+      <!-- Q2 -->
+      <div class="qa" id="q2">
+        <div class="q-label">问题二</div>
+        <blockquote class="q-orig">你的 s_total 是怎么来的？能复现吗？</blockquote>
+        <p class="q-read"><b>我的理解：</b>这其实在问——这套系统给情报打的分，现在到底可不可信、可不可复现。</p>
+        <p>先说实话：现在的 s_total 是大模型综合了相关性、时效、可行动性、来源可信度四个维度之后给的一个<b>整体判断分</b>。所以严格讲，它还不是一个可以稳定复现的公式——这是我要坦白的现状。</p>
+        <p>我没有一上来就把这几项的权重精确敲死，是有意的——那需要我比现在更懂这个行业。坦白说我还没在支付行业干过，只用过 Stripe 这类平台做过集成。在我还没有行业 ground truth 的阶段，我更愿意让 AI 先给一个能跑、方向不错的初稿，而不是假装自己能把权重定得很准、结果定错了反而带偏整条线。</p>
+        <p>要把它做成可信、可复现，路径是清楚的：</p>
+        <div class="diagram">
+          <div class="flow">
+            <div class="node">相关性 s_rel</div><div class="arrow">×0.4</div>
+            <div class="node">时效 s_time<span class="ns">按发布时间算</span></div><div class="arrow">×0.25</div>
+            <div class="node">可行动 s_act</div><div class="arrow">×0.25</div>
+            <div class="node">可信度 s_cred</div><div class="arrow">×0.1 →</div>
+            <div class="node accent">s_total<span class="ns">代码算 · 可审计</span></div>
+          </div>
+          <div class="cap">模型只出分项，总分由代码按显式权重合成；权重日后用真实反馈校准</div>
+        </div>
+        <p>具体就是：让模型<b>只输出几个分项</b>，总分由代码按摆在台面上的权重算（可调、可审计）；其中<b>时效分直接用发布时间算</b>，不让模型猜；固定模型版本、把版本号随每条分数一起记录，做到同输入同输出；最后再用真实反馈把权重<b>校准</b>到"最能预测'有用'"。这样它就从"模型拍一个数"，变成"可解释、可调、可复现"的分——而且对 RevE 也有用：能解释清楚为什么这条排在前面，也能手动调。</p>
+      </div>
+
+      <!-- Q3 -->
+      <div class="qa" id="q3">
+        <div class="q-label">问题三</div>
+        <blockquote class="q-orig">如何判断一个 source 是否可信？</blockquote>
+        <p class="q-read"><b>我的理解：</b>信噪比的根在信源质量；这是在问我有没有真办法判断来源可不可信，而不是丢给模型瞎猜。</p>
+        <p>现在来源可信度只是模型的一个粗判，算不上真正的治理。但我想先讲一个判断：<b>信源质量本质是投入问题，不是架构问题</b>——你投入越多、能接的源越多，能做的跨源印证就越多，质量自然越好。Demo 阶段用单一免费源（Brave）快速验证消息流，是合理的 MVP。</p>
+        <div class="diagram">
+          <div class="flow" style="align-items:center">
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="node">信源分层<span class="ns">监管/官方 ＞ 一线媒体 ＞ 聚合/营销</span></div>
+              <div class="node">多源印证<span class="ns">N 个独立来源相互证实</span></div>
+              <div class="node">反馈回写<span class="ns">被"没用"/证伪 → 降权</span></div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node accent">来源可信度<span class="ns">再按类型分别治理</span></div>
+          </div>
+        </div>
+        <p>真要判断可信度，我会三条一起上，而不是给单一来源拍一个主观分：一是<b>信源分层</b>——央行 / 外管局这类监管官网、公司官方 newsroom，可信度天然高于内容农场和营销号；先手工维护几十个、再慢慢长大。二是<b>多源印证</b>——同一件事被几个独立来源证实，可信度才上去，这一步顺带还把重复去掉了。三是<b>用真实反馈反向回写信誉</b>，长期被点"没用"或事后被证伪的来源自动降权。</p>
+        <p>而且不同类型分开治理更准——官方新闻、商业新闻、客户新闻、竞品新闻、监管合规、知识点，"什么算可信、什么算信号"本就因类而异。系统现在已经把<b>"我方生态"和"竞品"分开</b>了；下一步就是：竞品自己放出来的数字（"1 分钟到账"这种），默认当成它的口径、而不是事实，除非被别的独立来源印证。这一点对销售尤其重要——把竞品话术当事实转述给客户，是会出事的。</p>
+      </div>
+
+      <!-- Q4 -->
+      <div class="qa" id="q4">
+        <div class="q-label">问题四</div>
+        <blockquote class="q-orig">如果今天 Brave API 挂了，日报怎么保证稳定？</blockquote>
+        <p class="q-read"><b>我的理解：</b>这是在问系统的可靠性——别只跑通顺利的那条路，出故障时能不能稳得住。</p>
+        <p>现在确实是单点：Brave 全挂，当天就采不到新东西，这是我还没补的。但架构上已经留好了出路。</p>
+        <div class="diagram">
+          <div class="flow">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div class="node">源 A</div><div class="node">源 B</div><div class="node">源 C…</div>
+            </div>
+            <div class="arrow">→</div>
+            <div class="node accent">Postgres 池子<span class="ns">统一入库</span></div>
+            <div class="arrow">⟂ 解耦 →</div>
+            <div class="node">出报<span class="ns">只读池子</span></div>
+          </div>
+          <div class="loopbar">采集失败 → 不发空报告：顺延 / 复用近日仍有效情报 · 入库量低于阈值告警 · 人审兜底</div>
+        </div>
+        <p>采集这层（Collector）是很薄、可插拔的——加一个源就是加一个适配器，多接两三个源，单点就没了。不管接多少源，最后都统一入同一个 Postgres，而且<b>采集和出报是解耦的</b>：采集定时往库里填，出报只管从库里取。所以采集抖动顶多让当天池子薄一点，不会直接把报告打挂；瞬时失败还能退避重试，raw 已经落库、重跑也幂等。</p>
+        <p>再加上两层兜底：一是<b>优雅降级</b>——采集失败时不硬发一份空报告，而是顺延、复用近几天仍然有效的情报并标注清楚，宁可"旧但有用"也不要"空且尴尬"；二是<b>人在回路</b>——日报本来就是出多个候选、由人选一版发布，加上入库量低于阈值就告警，等于多了一道人工闸，坏的一天在发出去之前就被拦住了。我理解的"稳定"是"多源去单点 + 优雅降级 + 人在回路"，而不是赌某一个外部 API 永远不挂。</p>
+      </div>
+
+      <!-- Q5 -->
+      <div class="qa" id="q5">
+        <div class="q-label">问题五</div>
+        <blockquote class="q-orig">如果再给两天，先补哪三件事？</blockquote>
+        <p class="q-read"><b>我的理解：</b>这是在看我的优先级判断——资源有限时，我知不知道什么最该先做。</p>
+        <p>排序我还是跟着前面那条主线走：先让人用起来、把数据闭环跑通，再回头硬化工程。</p>
+        <p><b>第一，拉几个真实销售做小范围试点，把反馈闭环真正跑起来。</b>这是这个岗位的命门，也是衡量降噪好坏的真实信号来源——没有真实用户，前面说的一切治理都是自说自话。我想看的是一条四周的留存曲线和"动作转化率"，而不是打开率。</p>
+        <p><b>第二，给 Postgres 做向量化。</b>这是语义去重、检索、跨源印证的地基，这次没来得及做。问题三里"印证"那一步，技术上就得从这里长出来。</p>
+        <p><b>第三，把评分和信源信誉做成可复现、可回流。</b>就是问题二、三里说的：s_total 落成显式公式、固定版本可复现；再用真实反馈反向给信源和类目打分，让系统真的会自己变好。</p>
+        <p>多源兜底（问题四）紧随其后。但顺序我会坚持：<b>先能衡量、再能复现、再能闭环</b>——衡量不了的东西，是改不动的。</p>
+      </div>
+
+      <p id="end" class="signoff">以上。这套东西现在做到了"能跑、看得见效果"，但还不是"被治理的"——这是我清醒的取舍。说到底，所有这些治理，最终都要服务一个数字：销售因为用了它而多出来的成交。所以我会一直拿"有没有人用、用了有没有效果"当北极星，信噪比治理是为它服务的手段，不是目的本身。差在哪、怎么补，我都想清楚了。很感谢这道题让我把这件事想透，期待有机会当面聊。<br><br>—— 肖亮 Shawn</p>
+
+    </div>
   </div>
-
-  <!-- Q2 -->
-  <div class="qa">
-    <div class="q-label">问题二</div>
-    <blockquote class="q-orig">你的 s_total 是怎么来的？能复现吗？</blockquote>
-    <p class="q-read"><b>我的理解：</b>这其实在问——这套系统给情报打的分，现在到底可不可信、可不可复现。</p>
-    <p>先说实话：现在的 s_total 是大模型综合相关性、时效、可行动性、来源可信度之后给的一个<b>整体判断分</b>，所以严格讲，它还不是一个可以稳定复现的公式。这是我要坦白的现状。</p>
-    <p>我没有一上来就把评分权重精确敲死，是有意的——那需要我比现在更懂这个行业。坦白说我还没在支付行业干过，只用过 Stripe 这类平台做过集成。在我还没有行业 ground truth 的阶段，我更愿意让 AI 先给一个能跑、方向不错的初稿，而不是假装自己能把权重定得很准。</p>
-    <p>要把它做成可信、可复现，路径是清楚的：让模型只输出几个分项，<b>总分由代码按显式权重算</b>（权重就摆在台面上，可调、可审计）；时效分直接用发布时间算，不让模型猜；固定模型版本、把版本号随每条分数一起记录；最后再用真实反馈把权重<b>校准</b>到"最能预测'有用'"。也就是从"模型给一个数"，走到"可解释、可调、可复现的分"。</p>
-  </div>
-
-  <!-- Q3 -->
-  <div class="qa">
-    <div class="q-label">问题三</div>
-    <blockquote class="q-orig">如何判断一个 source 是否可信？</blockquote>
-    <p class="q-read"><b>我的理解：</b>信噪比的根在信源质量；这是在问我有没有真办法判断来源可不可信，而不是丢给模型瞎猜。</p>
-    <p>现在来源可信度只是模型的一个粗判，算不上真正的治理。但我想先讲一个判断：<b>信源质量本质是投入问题，不是架构问题</b>——你投入越多、能接的源越多，能做的跨源印证就越多，质量自然越好。Demo 阶段用单一免费源（Brave）快速验证消息流，是合理的 MVP。</p>
-    <p>真要判断可信度，我会三条一起上，而不是给单一来源打一个主观分：一是<b>信源分层</b>（监管官网 / 公司官方 / 一线媒体，对比聚合站 / 营销号，先手工维护几十个、再慢慢长大）；二是<b>多源印证</b>——同一件事被几个独立来源证实，可信度才上去，这一步顺带还把重复去掉了；三是<b>用真实反馈反向回写信誉</b>，长期被点"没用"或事后被证伪的来源自动降权。而且不同类型分开治理更准——官方新闻、商业新闻、客户新闻、竞品新闻、监管合规、知识点，"什么算可信、什么算信号"本就因类而异。比如竞品自己放出来的数字（"1 分钟到账"这种），默认当成它的口径、而不是事实，除非被别的来源印证。</p>
-  </div>
-
-  <!-- Q4 -->
-  <div class="qa">
-    <div class="q-label">问题四</div>
-    <blockquote class="q-orig">如果今天 Brave API 挂了，日报怎么保证稳定？</blockquote>
-    <p class="q-read"><b>我的理解：</b>这是在问系统的可靠性——别只跑通顺利的那条路，出故障时能不能稳得住。</p>
-    <p>现在确实是单点：Brave 全挂，当天就采不到新东西，这是我还没补的。但架构上已经留好了出路。采集这层（Collector）是很薄、可插拔的——加一个源就是加一个适配器，多接两三个源，单点就没了；不管接多少源，最后都统一入同一个 Postgres，而且<b>采集和出报是解耦的</b>：采集定时往库里填，出报只管从库里取，采集抖动顶多让当天的池子薄一点，不会直接把报告打挂。</p>
-    <p>再加上两层兜底：人审这道闸，加上<b>优雅降级</b>——采集失败时不硬发一份空报告，而是顺延、复用近几天仍然有效的情报并标注清楚；当天入库量低于阈值就告警，让人在发布前就知道。我理解的"稳定"是"多源去单点 + 优雅降级 + 人在回路"，而不是赌某一个外部 API 永远不挂。</p>
-  </div>
-
-  <!-- Q5 -->
-  <div class="qa">
-    <div class="q-label">问题五</div>
-    <blockquote class="q-orig">如果再给两天，先补哪三件事？</blockquote>
-    <p class="q-read"><b>我的理解：</b>这是在看我的优先级判断——资源有限时，我知不知道什么最该先做。</p>
-    <p>我的排序还是跟着上面那条主线走：</p>
-    <p><b>一、拉几个真实销售做小范围试点，把反馈闭环真正跑起来。</b>这是这个岗位的命门，也是衡量降噪好坏的真实信号来源——没有真实用户，前面说的一切治理都是自说自话。<br>
-    <b>二、给 Postgres 做向量化。</b>这是语义去重、检索、跨源印证的地基，这次没来得及做；信源可信度里"印证"那一步，也要从这里长出来。<br>
-    <b>三、把评分和信源信誉做成可复现、可回流。</b>s_total 落成显式公式、固定版本可复现；再用真实反馈反向给信源和类目打分，让系统真的会自己变好。</p>
-    <p>多源兜底紧随其后。但顺序我会坚持：<b>先能衡量、再能复现、再能闭环</b>——衡量不了的东西，是改不动的。</p>
-  </div>
-
-  <p class="signoff">以上。这套东西现在做到了"能跑、看得见效果"，但还不是"被治理的"——这是我清醒的取舍，差在哪、怎么补，我都想清楚了。很感谢这道题让我把这件事想透，期待有机会当面聊。<br><br>—— 肖亮 Shawn</p>
-
-</div>
 </div>
 </body>
 </html>
