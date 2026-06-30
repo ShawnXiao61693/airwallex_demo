@@ -9,8 +9,8 @@ def _j(s):
         return []
 
 COLS = ['id', 'fetched_at', 'published_at', 'source', 'status', 'relevant',
-        'category', 'roles', 'industry', 'signal_type', 's_total',
-        'title', 'comment', 'action', 'citation', 'url']
+        'category', 'roles', 'industry', 'signal_type', 's_total', 'lang',
+        'title', 'summary', 'comment', 'action', 'citation', 'url']
 
 def export(path):
     rows = db.conn().execute(
@@ -24,7 +24,7 @@ def export(path):
         items.append(d)
     # 概览统计
     def cnt(where=''):
-        return db.conn().execute("SELECT count(*) FROM news " + where).fetchone()[0]
+        return db.conn().execute("SELECT count(*) AS n FROM news " + where).fetchone()['n']
     stats = {
         'total': cnt(),
         'refined': cnt("WHERE status='refined'"),

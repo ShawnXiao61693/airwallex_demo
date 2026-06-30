@@ -247,18 +247,26 @@ def stats():
     # 数据看板：合格情报量 + 真实反馈（埋点）+ 最受认可的情报
     with db.conn() as c:
         refined = c.execute("SELECT count(*) n FROM news WHERE status='refined' AND relevant=1").fetchone()['n']
+        total_news = c.execute("SELECT count(*) n FROM news").fetchone()['n']
+        # 日报：覆盖天数 + 候选总数
+        daily_days = c.execute("SELECT count(DISTINCT bucket_date) n FROM daily_reports").fetchone()['n']
+        daily_cands = c.execute("SELECT count(*) n FROM daily_reports").fetchone()['n']
+        # 周/月报已发布数
+        pub = {f"{r['type']}_{r['status']}": r['n'] for r in
+               c.execute("SELECT type, status, count(*) n FROM publications GROUP BY type, status").fetchall()}
         votes = {r['vote']: r['n'] for r in
                  c.execute("SELECT vote, count(*) n FROM feedback GROUP BY vote").fetchall()}
-        by_role = c.execute(
-            "SELECT role, count(*) n FROM feedback GROUP BY role ORDER BY n DESC").fetchall()
         top = c.execute(
             """SELECT n.title, count(*) up FROM feedback f JOIN news n ON n.id=f.news_id
                WHERE f.vote='up' GROUP BY n.title ORDER BY up DESC LIMIT 5""").fetchall()
     up, down = votes.get('up', 0), votes.get('down', 0)
     total = up + down
-    return jsonify(refined=refined, up=up, down=down, total=total,
+    return jsonify(refined=refined, total_news=total_news,
+                   daily_days=daily_days, daily_cands=daily_cands,
+                   weekly_published=pub.get('weekly_published', 0),
+                   monthly_published=pub.get('monthly_published', 0),
+                   up=up, down=down, feedback_total=total,
                    useful_rate=(round(100 * up / total) if total else None),
-                   by_role=[{'role': r['role'], 'n': r['n']} for r in by_role],
                    top=[{'title': r['title'], 'up': r['up']} for r in top])
 
 @app.get('/api/health')

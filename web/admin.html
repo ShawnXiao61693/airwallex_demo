@@ -39,7 +39,6 @@
           <div class="kv"><span class="k">来源</span><span>Brave News API（新闻搜索）</span></div>
           <div class="kv"><span class="k">查询词</span><span>18 组：竞品 / 监管 / 汇率 / 行业 / 出海</span></div>
           <div class="kv"><span class="k">刷新</span><span>每个交易日采集 + 按天回填</span></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:14px">编辑数据源</button>
         </div>
         <div class="card tile">
           <h4>信号打分权重</h4>
@@ -48,7 +47,6 @@
           <div class="kv"><span class="k">时效性</span><span>25%</span></div>
           <div class="kv"><span class="k">可行动性</span><span>25%</span></div>
           <div class="kv"><span class="k">来源可信度</span><span>10%</span></div>
-          <button class="btn btn-ghost btn-sm" style="margin-top:14px">调整权重</button>
         </div>
       </div>
       <div class="card tile" style="margin-top:16px">
@@ -59,6 +57,17 @@
           <span class="chip cat-汇率">汇率宏观</span><span class="chip cat-行业">目标行业</span>
           <span class="chip cat-客户">客户潜客</span><span class="chip cat-我方">我方生态</span>
         </div>
+      </div>
+      <div class="card tile" style="margin-top:16px">
+        <h4>采集与信噪比原则</h4>
+        <div class="hint">这套引擎遵循的几条原则——决定了什么进库、怎么筛、给谁</div>
+        <div class="kv"><span class="k">信噪比是约束</span><span>宁缺毋滥：与一线销售无关的判为噪音、降噪，不进报告</span></div>
+        <div class="kv"><span class="k">两段筛</span><span>先逐条打标评分（Refiner），再成篇编排去重 / 多样化（Composer）</span></div>
+        <div class="kv"><span class="k">按角色分流</span><span>同一条情报按 AE（拓新）/ AM（客户成功）分别取用</span></div>
+        <div class="kv"><span class="k">多语言</span><span>每份日报 6 中 + 2 英，英文垫底，兼顾本土与全球信号</span></div>
+        <div class="kv"><span class="k">机器出、人来定</span><span>日报每天出 3 个候选，由 RevE 选一版发布；周期越长、人越主导</span></div>
+        <div class="kv"><span class="k">反馈回流</span><span>用户「有用 / 没用」实名埋点，回流去优化打分与选材</span></div>
+        <div class="kv"><span class="k">只依据原文</span><span>不编造：相关性、点评、动作只基于抓到的标题与摘要</span></div>
       </div>
     </section>
 
@@ -250,8 +259,11 @@ async function loadStats(){
   const rate = d.useful_rate==null ? '—' : d.useful_rate+'%';
   document.getElementById('statCards').innerHTML=
     statCard('合格情报（库内）', d.refined)+
-    statCard('收到反馈', d.total)+
-    statCard('有用率', rate);
+    statCard('日报覆盖天数', d.daily_days)+
+    statCard('日报候选总数', d.daily_cands)+
+    statCard('已发布周报', d.weekly_published)+
+    statCard('已发布月报', d.monthly_published)+
+    statCard('反馈 · 有用率', (d.feedback_total||0)+' · '+rate);
   const esc=s=>(s||'').toString().replace(/</g,'&lt;');
   const top=d.top||[];
   document.getElementById('statTop').innerHTML = top.length
