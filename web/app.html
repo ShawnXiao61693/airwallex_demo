@@ -48,6 +48,14 @@
     <div class="who" id="who"></div>
   </div>
 
+  <!-- 周期切换 -->
+  <div class="tabs" style="padding:14px 0 0">
+    <button class="tab on" data-cad="daily" onclick="switchCad(this)">日报</button>
+    <button class="tab" data-cad="weekly" onclick="switchCad(this)">周报</button>
+    <button class="tab" data-cad="monthly" onclick="switchCad(this)">月报</button>
+  </div>
+
+  <div id="dailyView">
   <!-- 日期选择器（前一天 / 日历下拉 / 后一天）-->
   <div class="datebar" id="datebar">
     <div class="dayrow">
@@ -69,6 +77,10 @@
   </div>
 
   <div id="intelList"></div>
+  </div><!-- /dailyView -->
+
+  <div id="weeklyView" style="display:none"></div>
+  <div id="monthlyView" style="display:none"></div>
 </div>
 
 <!-- 匹配客户 modal -->
@@ -226,6 +238,39 @@ function card(i){
     </div>
   </div>`;
 }
+/* ---- 周期切换：日报 / 周报 / 月报 ---- */
+function switchCad(btn){
+  document.querySelectorAll('#reportView .tabs .tab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  const cad=btn.dataset.cad;
+  document.getElementById('dailyView').style.display   = cad==='daily'  ?'block':'none';
+  document.getElementById('weeklyView').style.display  = cad==='weekly' ?'block':'none';
+  document.getElementById('monthlyView').style.display = cad==='monthly'?'block':'none';
+  const meta={daily:['每日情报','日报'],weekly:['每周赋能','周报 · 把信息炼成能力'],monthly:['每月特刊','月报']}[cad];
+  document.querySelector('#reportView .report-top .eyebrow').textContent=meta[0];
+  document.getElementById('rMeta').textContent='';
+  document.getElementById('rTitle').textContent = (cad==='daily' && SEL_DATE)?('日报 · '+SEL_DATE):meta[1];
+  if(cad==='weekly') loadWeekly();
+  if(cad==='monthly') loadMonthly();
+}
+async function loadWeekly(){
+  const v=document.getElementById('weeklyView');
+  v.innerHTML='<div class="loader"><div class="spinner"></div><span>加载周报…</span></div>';
+  let slots;
+  try{ slots=(await (await fetch('/api/slots?type=weekly',{cache:'no-store'})).json()).slots; }
+  catch(e){ v.innerHTML='<div class="empty-day">周报暂不可用。</div>'; return; }
+  const pub=(slots||[]).filter(s=>s.state==='published');
+  if(!pub.length){ v.innerHTML='<div class="empty-day">本期周报正在制作中，发布后会出现在这里。</div>'; return; }
+  v.innerHTML=pub.map(s=>'<a class="card intel" href="'+s.url+'" target="_blank" rel="noopener" style="display:block">'+
+    '<div class="meta"><span class="chip">周报</span><span class="chip">发布日 '+s.period+'</span></div>'+
+    '<h3>'+(s.title||('周报 · '+s.period+' 当周'))+'</h3>'+
+    '<div class="line"><b>打开本周周报</b> —— 翻页杂志：本周复盘 + 可复用话术 + AI 播客 + 自测 →</div></a>').join('');
+}
+function loadMonthly(){
+  document.getElementById('monthlyView').innerHTML=
+    '<div class="empty-day">月报是人主导的深度特刊——行业季度复盘、方法沉淀、AI 播客，按月发布。本期筹备中。</div>';
+}
+
 /* ---- 有用/没用 反馈（埋点）---- */
 async function vote(id, v, el){
   const wrap=el.closest('.fbgroup');
