@@ -116,7 +116,7 @@ async function enter(){
   try{
     const idx=await (await fetch(`${REPORT_DIR}/index.json`,{cache:'no-store'})).json();
     AVAIL={};
-    (idx.reports||[]).filter(r=>r.role===ROLE).forEach(r=>{AVAIL[r.date]=r.count;});
+    (idx.reports||[]).forEach(r=>{AVAIL[r.date]=(ROLE==='AE'?r.ae_count:r.am_count);});
   }catch(e){ AVAIL={}; }
   DATES=Object.keys(AVAIL).sort();
   if(!DATES.length){
@@ -183,15 +183,16 @@ async function loadDay(date, t0){
   document.getElementById('dateBtnLabel').textContent=date;
   document.getElementById('rTitle').textContent=`日报 · ${date}`;
   let rep=null;
-  try{ rep=await (await fetch(`${REPORT_DIR}/report_${date}_${ROLE}.json`,{cache:'no-store'})).json(); }
+  try{ rep=await (await fetch(`${REPORT_DIR}/report_${date}.json`,{cache:'no-store'})).json(); }
   catch(e){ rep=null; }
   await minWait(start);
-  if(!rep){
+  const seg = rep ? (ROLE==='AE'?rep.ae:rep.am) : null;
+  if(!seg){
     document.getElementById('rMeta').textContent='';
     document.getElementById('intelList').innerHTML=`<div class="empty-day">这一天暂无日报。</div>`;
     CUR_ITEMS=[]; return;
   }
-  CUR_ITEMS=rep.items||[];
+  CUR_ITEMS=seg.items||[];
   document.getElementById('rMeta').textContent=
     (rep.lede?rep.lede+' · ':'')+`按「${ROLE}」精选 ${CUR_ITEMS.length} 条可行动情报`;
   document.getElementById('intelList').innerHTML=CUR_ITEMS.map(card).join('');

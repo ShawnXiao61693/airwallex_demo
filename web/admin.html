@@ -180,45 +180,53 @@ function nav(el){
   el.classList.add('on');
   document.getElementById(el.dataset.p).classList.add('on');
 }
-// ===== 日报审核：拉取按天编排出的报告草稿 =====
-const RDIR='data/reports/';
-let REPORTS=null, APPROVED={};
+// ===== 日报审核：每天 3 个 release candidate，选一版发布（落库，走 /api/daily/*）=====
+let DAYS=null;
 async function loadReports(){
-  if(REPORTS){ renderReports(); return; }
-  try{
-    const r=await fetch(RDIR+'index.json',{cache:'no-store'}); REPORTS=(await r.json()).reports||[];
-  }catch(e){ document.getElementById('reportList').innerHTML='<div class="muted">加载失败：'+e+'</div>'; return; }
-  renderReports();
-}
-function renderReports(){
-  const esc=s=>(s||'').toString().replace(/</g,'&lt;');
-  document.getElementById('reportList').innerHTML = REPORTS.map(r=>{
-    const key=r.date+'_'+r.role, pub=APPROVED[key];
+  let d;
+  try{ d=await (await fetch('/api/daily/list',{cache:'no-store'})).json(); }
+  catch(e){ document.getElementById('reportList').innerHTML='<div class="muted">加载失败：'+e+'（API 没起？）</div>'; return; }
+  DAYS=d.days||[];
+  if(!DAYS.length){ document.getElementById('reportList').innerHTML='<div class="muted">还没有日报候选，引擎 compose 后出现。</div>'; return; }
+  document.getElementById('reportList').innerHTML = DAYS.map(x=>{
+    const pub = x.published_no!=null;
     return '<div class="draftrow">'+
       '<div style="flex:1">'+
-        '<span class="pill '+(pub?'live':'draft')+'">'+(pub?'已发布':'草稿')+'</span>&nbsp; '+
-        '<b>'+r.date+' · '+r.role+'</b> <span class="muted" style="font-size:12px">'+r.count+' 条</span>'+
-        '<div class="muted" style="font-size:12.5px;margin-top:4px">'+esc(r.lede)+'</div>'+
+        '<span class="pill '+(pub?'live':'draft')+'">'+(pub?'已发布 RC'+x.published_no:'待审核')+'</span>&nbsp; '+
+        '<b>日报 · '+x.date+'</b> <span class="muted" style="font-size:12px">'+x.cands+' 个候选</span>'+
       '</div>'+
-      '<div style="display:flex;gap:8px;align-items:center">'+
-        '<button class="btn btn-ghost btn-sm" onclick="previewReport(\''+r.file+'\')">预览</button>'+
-        '<button class="btn btn-grad btn-sm" onclick="approveReport(\''+key+'\',this)">'+(pub?'已发布':'通过发布')+'</button>'+
-      '</div></div>';
+      '<button class="btn btn-grad btn-sm" onclick="openDay(\''+x.date+'\')">审核 / 选版</button>'+
+    '</div>';
   }).join('');
 }
-function approveReport(key,btn){ APPROVED[key]=true; btn.textContent='已发布'; btn.closest('.draftrow').querySelector('.pill').className='pill live'; btn.closest('.draftrow').querySelector('.pill').textContent='已发布'; }
-async function previewReport(file){
-  let d; try{ d=await (await fetch(RDIR+file,{cache:'no-store'})).json(); }catch(e){ return; }
+async function openDay(date){
+  let d;
+  try{ d=await (await fetch('/api/daily/candidates?date='+date,{cache:'no-store'})).json(); }catch(e){ return; }
   const esc=s=>(s||'').toString().replace(/</g,'&lt;');
-  document.getElementById('mTitle').textContent=d.date+' · '+d.role+' 日报';
-  document.getElementById('mBody').innerHTML='<div class="muted" style="margin-bottom:12px">'+esc(d.lede)+'</div>'+
-    d.items.map((it,i)=>'<div style="padding:12px 0;border-top:1px solid var(--line)">'+
-      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px"><span class="chip cat-'+((it.category||[])[0]||'行业')+'">'+(it.category||[]).join('/')+'</span><span class="chip">'+esc(it.signal_type)+'</span><span class="chip">分 '+it.score+'</span></div>'+
-      '<b>'+(i+1)+'. '+esc(it.title)+'</b>'+
-      '<div style="font-size:13px;color:#33373E;margin-top:4px">点评：'+esc(it.comment)+'</div>'+
-      '<div style="font-size:13px;color:#33373E">动作：'+esc(it.action)+'</div>'+
-      '<div class="src" style="margin-top:4px">来源：'+esc(it.source)+'</div></div>').join('');
+  const seg=(items)=>items.map((it,i)=>'<div style="padding:5px 0;border-top:1px solid var(--line)">'+
+      '<span class="chip cat-'+((it.category||[])[0]||'目标行业')+'">'+(it.category||[]).join('/')+'</span> '+
+      '<b style="font-size:12.5px">'+(i+1)+'. '+esc(it.title)+'</b>'+
+      '<div style="font-size:12px;color:#33373E">概览：'+esc(it.summary||it.comment)+'</div></div>').join('');
+  document.getElementById('mTitle').textContent='日报 · '+date+' · 选一版发布';
+  document.getElementById('mBody').innerHTML = (d.candidates||[]).map(c=>{
+    const pub = c.status==='published';
+    return '<div class="mcli" style="margin-bottom:16px">'+
+      '<div class="mcli-h"><strong>RC'+c.cand_no+' · '+esc(c.angle)+'</strong>'+
+        '<span class="pill '+(pub?'live':'draft')+'">'+(pub?'已发布':'候选')+'</span></div>'+
+      '<div class="muted" style="font-size:12.5px;margin-bottom:6px">'+esc(c.lede)+'</div>'+
+      '<div style="font-size:11px;color:var(--muted);margin-top:6px">AE 段 · '+c.ae.length+' 条</div>'+seg(c.ae)+
+      '<div style="font-size:11px;color:var(--muted);margin-top:8px">AM 段 · '+c.am.length+' 条</div>'+seg(c.am)+
+      '<button class="btn '+(pub?'btn-ghost':'btn-grad')+' btn-sm" style="margin-top:10px" '+(pub?'disabled':'')+' onclick="publishCand(\''+date+'\','+c.cand_no+')">'+(pub?'当前已发布':'发布这一版')+'</button>'+
+    '</div>';
+  }).join('');
   document.getElementById('reportModal').classList.add('show');
+}
+async function publishCand(date, cand_no){
+  try{
+    const r=await fetch('/api/daily/publish',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date:date,cand_no:cand_no})});
+    if(!r.ok) throw new Error(r.status);
+  }catch(e){ alert('发布失败：'+e); return; }
+  closeReport(); loadReports();
 }
 function closeReport(){document.getElementById('reportModal').classList.remove('show');}
 

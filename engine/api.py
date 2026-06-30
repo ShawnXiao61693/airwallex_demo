@@ -164,6 +164,35 @@ def feedback():
     db.add_feedback(news_id, role, vote)
     return jsonify(ok=True)
 
+@app.get('/api/daily/list')
+def daily_list():
+    rows = db.list_daily_days()
+    return jsonify(days=[{'date': r['bucket_date'], 'cands': r['cands'],
+                          'published_no': r['published_no']} for r in rows])
+
+@app.get('/api/daily/candidates')
+def daily_candidates():
+    date = request.args.get('date', '')
+    out = []
+    for r in db.get_daily_candidates(date):
+        out.append({'cand_no': r['cand_no'], 'angle': r['angle'], 'lede': r['lede'],
+                    'status': r['status'],
+                    'ae': json.loads(r['ae_items'] or '[]'),
+                    'am': json.loads(r['am_items'] or '[]')})
+    return jsonify(date=date, candidates=out)
+
+@app.post('/api/daily/publish')
+def daily_publish():
+    body = request.get_json(force=True, silent=True) or {}
+    date = (body.get('date') or '').strip()
+    cand_no = body.get('cand_no')
+    if not date or cand_no is None:
+        return jsonify(error='need date + cand_no'), 400
+    db.publish_daily(date, int(cand_no))
+    import compose
+    compose.write_published_files()      # 重写 report_<date>.json + index.json
+    return jsonify(ok=True, date=date, cand_no=int(cand_no))
+
 @app.get('/api/stats')
 def stats():
     # 数据看板：合格情报量 + 真实反馈（埋点）+ 最受认可的情报

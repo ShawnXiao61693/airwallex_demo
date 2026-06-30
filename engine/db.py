@@ -40,6 +40,23 @@ CREATE TABLE IF NOT EXISTS feedback (
 );
 """
 
+# 日报候选（落库 + 审核）：一天一份日报，每天 compose 出多个 release candidate；
+# 一份里同时含 AE 段 + AM 段（角色进去各看各的）。审核时人工选一个发布。
+SCHEMA_DAILY = """
+CREATE TABLE IF NOT EXISTS daily_reports (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  bucket_date TEXT,
+  cand_no INTEGER,              -- 1..N 候选号
+  angle TEXT,                   -- 编辑角度
+  lede TEXT,
+  ae_items TEXT,               -- JSON：AE 段 items
+  am_items TEXT,               -- JSON：AM 段 items
+  status TEXT DEFAULT 'candidate',   -- candidate / published
+  created_at TEXT, published_at TEXT,
+  UNIQUE(bucket_date, cand_no)
+);
+"""
+
 SCHEMA_PUB = """
 CREATE TABLE IF NOT EXISTS publications (
   id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -58,6 +75,7 @@ def init_db():
         c.execute(SCHEMA)
         c.execute(SCHEMA_PUB)
         c.execute(SCHEMA_FEEDBACK)
+        c.execute(SCHEMA_DAILY)
         for m in MIGRATIONS:
             c.execute(m)
 
@@ -65,6 +83,48 @@ def add_feedback(news_id, role, vote):
     with conn() as c:
         c.execute("INSERT INTO feedback (news_id, role, vote, created_at) VALUES (%s,%s,%s,%s)",
                   (news_id, role, vote, datetime.datetime.utcnow().isoformat()))
+
+# ---- 日报候选（落库 + 审核）----
+def save_daily_candidate(date, cand_no, angle, lede, ae_items_json, am_items_json):
+    with conn() as c:
+        c.execute(
+            """INSERT INTO daily_reports (bucket_date,cand_no,angle,lede,ae_items,am_items,status,created_at)
+               VALUES (%s,%s,%s,%s,%s,%s,'candidate',%s)
+               ON CONFLICT (bucket_date,cand_no) DO UPDATE
+               SET angle=EXCLUDED.angle, lede=EXCLUDED.lede, ae_items=EXCLUDED.ae_items,
+                   am_items=EXCLUDED.am_items, status='candidate',
+                   created_at=EXCLUDED.created_at, published_at=NULL""",
+            (date, cand_no, angle, lede, ae_items_json, am_items_json,
+             datetime.datetime.utcnow().isoformat()))
+
+def publish_daily(date, cand_no):
+    with conn() as c:
+        c.execute("UPDATE daily_reports SET status='candidate', published_at=NULL WHERE bucket_date=%s", (date,))
+        c.execute("""UPDATE daily_reports SET status='published', published_at=%s
+                     WHERE bucket_date=%s AND cand_no=%s""",
+                  (datetime.datetime.utcnow().isoformat(), date, cand_no))
+
+def get_daily_candidates(date):
+    with conn() as c:
+        return c.execute("SELECT * FROM daily_reports WHERE bucket_date=%s ORDER BY cand_no", (date,)).fetchall()
+
+def get_daily_published(date):
+    with conn() as c:
+        return c.execute("SELECT * FROM daily_reports WHERE bucket_date=%s AND status='published'", (date,)).fetchone()
+
+def list_daily_days():
+    # 每天：候选数 + 已发布候选号
+    with conn() as c:
+        return c.execute(
+            """SELECT bucket_date,
+                      count(*) AS cands,
+                      max(CASE WHEN status='published' THEN cand_no END) AS published_no
+               FROM daily_reports GROUP BY bucket_date ORDER BY bucket_date DESC""").fetchall()
+
+def list_daily_published():
+    with conn() as c:
+        return c.execute(
+            "SELECT * FROM daily_reports WHERE status='published' ORDER BY bucket_date DESC").fetchall()
 
 # ---- 周/月报出版物（手搓上传 → 审核发布）----
 def upsert_publication(period, typ, title, html_path):
