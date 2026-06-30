@@ -2,6 +2,16 @@
    品牌色：Shark #1A1D21 / Violet #612FFF / Orange #FF703F / White
    签名：紫→橙渐变 */
 
+/* 自托管字体：英文 Inter / 等宽 JetBrains Mono（中文走系统苹方/雅黑，见 --font）。
+   不依赖 Google Fonts，大陆也能秒开。 */
+@font-face{font-family:'Inter';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/inter-400.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:500;font-display:swap;src:url('fonts/inter-500.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/inter-600.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:700;font-display:swap;src:url('fonts/inter-700.woff2') format('woff2')}
+@font-face{font-family:'Inter';font-style:normal;font-weight:800;font-display:swap;src:url('fonts/inter-800.woff2') format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:400;font-display:swap;src:url('fonts/jbmono-400.woff2') format('woff2')}
+@font-face{font-family:'JetBrains Mono';font-style:normal;font-weight:600;font-display:swap;src:url('fonts/jbmono-600.woff2') format('woff2')}
+
 :root{
   --shark:#1A1D21;
   --ink:#1A1D21;
